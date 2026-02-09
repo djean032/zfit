@@ -2,3 +2,4 @@
 directory = minpack
 url = https://github.com/fortran-lang/minpack
 revision = head
+patch_directory = minpack
