@@ -5,78 +5,67 @@ module zfit
   implicit none
 
 contains
-  subroutine fit_zscan_data_fortran(x_data, y_data, populations, residuals, error, t_slices, z_slices, tau, wavelength, w0, M2, &
-                                    pulse_energy, spec_pars, frq)
-    real(dp), intent(in) :: x_data(:), y_data(:), populations(:), tau, wavelength, w0, M2
-    real(dp), intent(in) :: pulse_energy
-    real(dp), intent(inout) :: spec_pars(8)
-    real(dp), intent(in) :: frq
-    integer(kind=4), intent(in) :: t_slices, z_slices
-    real(dp), intent(out) :: residuals(:), error
-    integer(kind=4) :: z_pos_slices, idx, zdx, tdx, loc(1), size_exp, i
-    real(dp) :: wid, zr
-    real(dp), allocatable :: tot(:), int0(:), z(:), fvec(:), t(:), z_sample(:), intensities(:, :), z_pos(:)
-    real(dp) :: start, finish
-
-    call cpu_time(start)
-
-    wid = tau / (2 * (log(2.0_dp))**0.5)
-    zr = (pi * w0**2) / (M2 * wavelength)
-
-    z_pos_slices = size(x_data, dim=1)
-
-    allocate (tot(z_pos_slices))
-    allocate (int0(z_pos_slices))
-    allocate (z(z_slices))
-    allocate (fvec(z_pos_slices))
-    allocate (t(t_slices))
-    allocate (z_sample(z_slices))
-    allocate (intensities(z_pos_slices, t_slices))
-    allocate (z_pos(z_pos_slices))
-
-    loc = minloc(y_data)
-    z_pos = z_pos - z_pos(loc(1))
-
-    z = linspace(0.0_dp, 1.0e-1_dp, z_slices)
-    t = linspace(-4.0e-9_dp, 4.0e-9_dp, t_slices)
-
-    do concurrent(zdx=1:z_pos_slices)
-      do concurrent(tdx=1:t_slices)
-        intensities(zdx, tdx) = irradiance(0.0_dp, t(tdx), z_pos(zdx), pulse_energy, wid, w0, zr)
-      end do
-    end do
-
-    call fit_scan(x_data, y_data, solve_system, z_sample, &
-                  t, populations, intensities, fvec, frq, spec_pars)
-    residuals = fvec
-    error = enorm(z_pos_slices, fvec)
-
-    call cpu_time(finish)
-  end subroutine
-
   subroutine fit_zscan_data(x_data, y_data, populations, residuals, error, t_slices, z_slices, tau, wavelength, w0, M2, &
-                            pulse_energy, spec_pars, frq, x_size, y_size, pop_size, res_size) bind(C, name="fit_zscan_data")
-    use iso_c_binding
+                                    pulse_energy, spec_pars, n_xdata, n_populations, n_residuals) bind(C, name="fit_zscan_data")
+    !GCC$ attributes dllexport :: fit_zscan_data
     real(c_double), intent(in) :: x_data(*), y_data(*), populations(*), tau, wavelength, w0, M2
     real(c_double), intent(in) :: pulse_energy
     real(c_double), intent(inout) :: spec_pars(8)
-    real(c_double), intent(in) :: frq
     integer(c_int), intent(in) :: t_slices, z_slices
     real(c_double), intent(out) :: residuals(*), error
-    integer(c_int), intent(in) :: x_size, y_size, pop_size, res_size
-    real(c_double), allocatable :: x_data_fort(:), y_data_fort(:), populations_fort(:), residuals_fort(:)
+    integer(c_int), intent(in) :: n_xdata, n_populations, n_residuals
+    integer(c_int) :: z_pos_slices, idx, zdx, tdx, loc(1), size_exp, i
+    real(c_double) :: wid, zr, frq
+    real(c_double), allocatable :: tot(:), int0(:), z(:), fvec(:), t(:), intensities(:, :), z_pos(:)
+    real(c_double), allocatable :: data_x(:), data_y(:), data_pop(:)
+    real(c_double) :: start, finish
 
-    allocate(x_data_fort(x_size), y_data_fort(y_size), populations_fort(pop_size), residuals_fort(res_size))
+    z_pos_slices = n_xdata
 
-    x_data_fort = x_data(1:x_size)
-    y_data_fort = y_data(1:y_size)
-    populations_fort = populations(1:pop_size)
+    allocate(tot(z_pos_slices), int0(z_pos_slices), z(z_slices), fvec(z_pos_slices))
+    allocate(t(z_slices), intensities(z_pos_slices, t_slices), z_pos(z_pos_slices))
+    allocate(data_x(z_pos_slices), data_y(z_pos_slices), data_pop(n_populations))
 
-    call fit_zscan_data_fortran(x_data_fort, y_data_fort, populations_fort, residuals_fort, error, t_slices, z_slices, &
-                        tau, wavelength, w0, M2, pulse_energy, spec_pars, frq)
+    do zdx = 1, z_pos_slices
+      data_x(zdx) = x_data(zdx)
+      data_y(zdx) = y_data(zdx)
+      z_pos(zdx) = x_data(zdx)
+    end do
 
-    residuals(1:res_size) = residuals_fort
+    do i = 1, n_populations
+      data_pop(i) = populations(i)
+    end do
 
-    deallocate (x_data_fort, y_data_fort, populations_fort, residuals_fort)
+    wid = tau / (2 * (log(2.0_c_double))**0.5)
+    zr = (pi * w0**2) / (M2 * wavelength)
+    frq = c / wavelength
+
+    loc = minloc(data_y)
+    do zdx = 1, z_pos_slices
+      z_pos(zdx) = z_pos(zdx) - z_pos(loc(1))
+    end do
+
+    do zdx = 1, z_slices
+      z(zdx) = 0.0_c_double + (1.0e-1_c_double - 0.0_c_double) * (zdx - 1) / (z_slices - 1)
+    end do
+
+    do tdx = 1, t_slices
+      t(tdx) = -4.0e-9_c_double + (4.0e-9_c_double - (-4.0e-9_c_double)) * (tdx - 1) / (t_slices - 1)
+    end do
+
+    do zdx = 1, z_pos_slices
+      do tdx = 1, t_slices
+        intensities(zdx, tdx) = irradiance(0.0_c_double, t(tdx), z_pos(zdx), pulse_energy, wid, w0, zr)
+      end do
+    end do
+
+    call fit_scan(data_x, data_y, solve_system, z, &
+                  t, data_pop, intensities, fvec, frq, spec_pars)
+    do i = 1, z_pos_slices
+      residuals(i) = fvec(i)
+    end do
+    error = enorm(z_pos_slices, fvec)
+
+    call cpu_time(finish)
   end subroutine
 end module zfit

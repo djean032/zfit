@@ -1,20 +1,20 @@
 module global
   use minpack_module
-  use iso_fortran_env, only: dp => real64
+  use iso_c_binding
   implicit none
 
-  real(dp), parameter :: c = 299792458_dp
-  real(dp), parameter :: h = 6.62607015e-34_dp
-  real(dp), parameter :: pi = 4.0_dp * atan(1.0_dp)
+  real(c_double), parameter :: c = 299792458.0_c_double
+  real(c_double), parameter :: h = 6.62607015e-34_c_double
+  real(c_double), parameter :: pi = 4.0_c_double * atan(1.0_c_double)
 
 contains
   function linspace(first, last, n)
-    real(dp), intent(in) :: first
-    real(dp), intent(in) :: last
-    integer, intent(in) :: n
-    integer :: i
-    real(dp) :: span
-    real(dp) :: linspace(n)
+    real(c_double), intent(in) :: first
+    real(c_double), intent(in) :: last
+    integer(c_int), intent(in) :: n
+    integer(c_int) :: i
+    real(c_double) :: span
+    real(c_double) :: linspace(n)
 
     span = last - first
 
