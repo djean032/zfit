@@ -1,3 +1,8 @@
 subprojects/packagecache
 subprojects/minpack
 subprojects/minpack
+mod
+obj
+test
+libzfit.a
+libzfit.dll

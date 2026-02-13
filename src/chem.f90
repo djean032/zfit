@@ -151,6 +151,7 @@ contains
 ! Remove globals.
   pure function solve_system(z_positions, z_samples, times, initial_population, &
                              laser_intensities, frq, spec_pars) result(y)
+    !GCC$ attributes dllexport :: solve_system
     real(c_double), intent(in) :: z_positions(:)
     real(c_double), intent(in) :: z_samples(:)
     real(c_double), intent(in) :: initial_population(:)
