@@ -105,8 +105,8 @@ contains
     neq = 5
     lrw = 102
     liw = 25
-    rtol = 0.5e-6_c_double
-    atol = 0.5e-6_c_double
+    rtol = 1e-6_c_double
+    atol = 1e-6_c_double
     itol = 1
     itask = 1
     istate = 1
@@ -133,8 +133,8 @@ contains
     neq = 1
     lrw = 102
     liw = 25
-    rtol = 0.5e-6_c_double
-    atol = 0.5e-6_c_double
+    rtol = 1e-6_c_double
+    atol = 1e-6_c_double
     itol = 1
     itask = 1
     istate = 1
@@ -165,6 +165,7 @@ contains
                     intensity_0(size(z_positions)), current_population(15), current_intensity(15), &
                     t0, tout, z0, zout
     integer(c_int) :: pos_idx, t_idx, sample_idx
+    
     current_population(1:5) = initial_population
     current_population(7) = frq
     current_population(8:15) = spec_pars(:)
@@ -178,8 +179,8 @@ contains
     tout = times(2) - times(1)
     z0 = 0.0_c_double
     zout = z_samples(2)
-    do concurrent(pos_idx=1:size(z_positions))
-      do concurrent(sample_idx=1:size(z_samples))
+    do pos_idx = 1, size(z_positions)
+      do sample_idx = 1, size(z_samples)
         pop(:, sample_idx) = initial_population
       end do
       do t_idx = 1, size(times)
@@ -202,7 +203,7 @@ contains
   end function solve_system
 
   subroutine fit_scan(data_x, data_y, expr, z_samples, &
-           times, initial_population, laser_intensities, fvec, frq, spec_pars)
+           times, initial_population, laser_intensities, fvec, frq, spec_pars, num_x_pts, num_datasets)
     real(c_double), intent(in) :: data_x(:)
     real(c_double), intent(in) :: data_y(:)
     real(c_double), intent(inout) :: spec_pars(8)
@@ -210,8 +211,9 @@ contains
     real(c_double), intent(in) :: z_samples(:)
     real(c_double), intent(in) :: times(:)
     real(c_double), intent(in) :: initial_population(:)
-    real(c_double), intent(in) :: laser_intensities(:, :)
+    real(c_double), intent(in) :: laser_intensities(:, :, :)
     real(c_double), intent(in) :: frq
+    integer(c_int), intent(in) :: num_x_pts, num_datasets
     real(c_double) :: tol
     integer(c_int) :: iwa(5), info, m, n
     procedure(expr_f) :: expr
@@ -228,11 +230,16 @@ contains
       real(c_double), intent(in) :: x(n)
       real(c_double), intent(out) :: fvec(m)
       real(c_double) :: y(size(data_x)), local_spec_pars(8)
+      integer(c_int) :: i, bidx, eidx
       fvec(1) = iflag
       local_spec_pars = spec_pars
       local_spec_pars(3) = x(1)
-      y = expr(data_x, z_samples, times, initial_population, laser_intensities, frq, local_spec_pars)
-      fvec = (data_y - y)
+      do i = 1, num_datasets
+        bidx = (i - 1) * num_x_pts + 1
+        eidx = i * num_x_pts
+        y(bidx:eidx) = expr(data_x(bidx:eidx), z_samples, times, initial_population, laser_intensities(:, :, i), frq, local_spec_pars)
+        fvec(bidx:eidx) = (data_y(bidx:eidx) - y(bidx:eidx))
+      end do
     end subroutine 
   end subroutine fit_scan
 

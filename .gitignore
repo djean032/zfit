@@ -6,3 +6,12 @@ obj
 test
 libzfit.a
 libzfit.dll
+fit_multiple.png
+fit_single.png
+data
+.fprettify.rc
+*.mod
+*.lib
+*.dll
+libzfit.exp
+minpack.f90.exp
