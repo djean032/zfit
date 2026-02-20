@@ -55,6 +55,18 @@ module chem
   public :: rhs_rates, rhs_intensity, jdum, solve_rates, solve_intensity, &
             solve_system, fit_scan
 
+  ! Module-level variables for callback (to avoid nested procedure issue on Linux gfortran)
+  real(c_double), pointer :: cb_data_x(:) => null()
+  real(c_double), pointer :: cb_data_y(:) => null()
+  real(c_double), pointer :: cb_spec_pars(:) => null()
+  real(c_double), pointer :: cb_z_samples(:) => null()
+  real(c_double), pointer :: cb_times(:) => null()
+  real(c_double), pointer :: cb_initial_population(:) => null()
+  real(c_double), pointer :: cb_laser_intensities(:,:,:) => null()
+  real(c_double) :: cb_frq
+  integer(c_int) :: cb_num_x_pts, cb_num_datasets
+  procedure(expr_f), pointer :: cb_expr => null()
+
 contains
   pure subroutine rhs_rates(neq, time, y, ydot)
     integer(c_int), intent(in) :: neq
@@ -204,43 +216,67 @@ contains
 
   subroutine fit_scan(data_x, data_y, expr, z_samples, &
            times, initial_population, laser_intensities, fvec, frq, spec_pars, num_x_pts, num_datasets)
-    real(c_double), intent(in) :: data_x(:)
-    real(c_double), intent(in) :: data_y(:)
-    real(c_double), intent(inout) :: spec_pars(8)
+    real(c_double), intent(in), target :: data_x(:)
+    real(c_double), intent(in), target :: data_y(:)
+    real(c_double), intent(inout), target :: spec_pars(8)
     real(c_double), intent(inout) :: fvec(:)
-    real(c_double), intent(in) :: z_samples(:)
-    real(c_double), intent(in) :: times(:)
-    real(c_double), intent(in) :: initial_population(:)
-    real(c_double), intent(in) :: laser_intensities(:, :, :)
+    real(c_double), intent(in), target :: z_samples(:)
+    real(c_double), intent(in), target :: times(:)
+    real(c_double), intent(in), target :: initial_population(:)
+    real(c_double), intent(in), target :: laser_intensities(:, :, :)
     real(c_double), intent(in) :: frq
     integer(c_int), intent(in) :: num_x_pts, num_datasets
+    procedure(expr_f) :: expr
     real(c_double) :: tol
     integer(c_int) :: iwa(5), info, m, n
-    procedure(expr_f) :: expr
     real(c_double) :: wa(2 * size(fvec) * 5 + 5 * 5 + size(fvec))
+
+    ! Set module-level callback variables
+    cb_data_x => data_x
+    cb_data_y => data_y
+    cb_spec_pars => spec_pars
+    cb_z_samples => z_samples
+    cb_times => times
+    cb_initial_population => initial_population
+    cb_laser_intensities => laser_intensities
+    cb_frq = frq
+    cb_num_x_pts = num_x_pts
+    cb_num_datasets = num_datasets
+    cb_expr => expr
+
     tol = 1e-3_c_double
     m = size(fvec)
     n = 1
     call lmdif1(fcn, m, n, spec_pars(3), fvec, tol, info, iwa, wa, size(wa))
-  contains
 
-    subroutine fcn(m, n, x, fvec, iflag)
-      integer(c_int), intent(in) :: m, n
-      integer(c_int), intent(inout) :: iflag
-      real(c_double), intent(in) :: x(n)
-      real(c_double), intent(out) :: fvec(m)
-      real(c_double) :: y(size(data_x)), local_spec_pars(8)
-      integer(c_int) :: i, bidx, eidx
-      fvec(1) = iflag
-      local_spec_pars = spec_pars
-      local_spec_pars(3) = x(1)
-      do i = 1, num_datasets
-        bidx = (i - 1) * num_x_pts + 1
-        eidx = i * num_x_pts
-        y(bidx:eidx) = expr(data_x(bidx:eidx), z_samples, times, initial_population, laser_intensities(:, :, i), frq, local_spec_pars)
-        fvec(bidx:eidx) = (data_y(bidx:eidx) - y(bidx:eidx))
-      end do
-    end subroutine 
+    ! Clear pointers
+    cb_data_x => null()
+    cb_data_y => null()
+    cb_spec_pars => null()
+    cb_z_samples => null()
+    cb_times => null()
+    cb_initial_population => null()
+    cb_laser_intensities => null()
+    cb_expr => null()
   end subroutine fit_scan
+
+  ! Module-level callback for lmdif1
+  subroutine fcn(m, n, x, fvec, iflag)
+    integer(c_int), intent(in) :: m, n
+    integer(c_int), intent(inout) :: iflag
+    real(c_double), intent(in) :: x(n)
+    real(c_double), intent(out) :: fvec(m)
+    real(c_double) :: y(size(cb_data_x)), local_spec_pars(8)
+    integer(c_int) :: i, bidx, eidx
+
+    local_spec_pars = cb_spec_pars
+    local_spec_pars(3) = x(1)
+    do i = 1, cb_num_datasets
+      bidx = (i - 1) * cb_num_x_pts + 1
+      eidx = i * cb_num_x_pts
+      y(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
+      fvec(bidx:eidx) = (cb_data_y(bidx:eidx) - y(bidx:eidx))
+    end do
+  end subroutine
 
 end module chem

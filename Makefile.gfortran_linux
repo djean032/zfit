@@ -1,0 +1,17 @@
+.PHONY: all clean
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+	LDFLAGS = -z noexecstack
+else
+	LDFLAGS = -static-libgcc -static-libgfortran
+endif
+
+all:
+	mkdir -p obj mod
+	gfortran -O3 -fPIC -std=legacy -fallow-argument-mismatch -shared -Jmod -o libzfit.so src/minpack.f90 src/global.f90 src/laser.f90 src/chem.f90 src/zfit.f90 src/opkdmain.f src/opkda1.f src/opkda2.f $(LDFLAGS)
+
+clean:
+	rm -rf obj mod
+	rm -f libzfit.so libzfit.a *.mod

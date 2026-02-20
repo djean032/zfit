@@ -1,15 +1,21 @@
 import ctypes
 import numpy as np
 import time
+import os
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-lib_name = "libzfit.dll"
-lib = ctypes.CDLL(lib_name, winmode=0)
+lib_name = "libzfit.so"
+current_dir = os.getcwd()
+abs_path = os.path.abspath(os.path.join(current_dir, lib_name))
+lib = ctypes.CDLL(abs_path)
 
-lib.fit_zscan_data.argtypes = [
+fit_zscan_data = lib.fit_zscan_data
+fit_zscan_data.restype = None
+
+fit_zscan_data.argtypes = [
     ctypes.POINTER(ctypes.c_double),
     ctypes.POINTER(ctypes.c_double),
     ctypes.POINTER(ctypes.c_double),
@@ -59,7 +65,7 @@ def fit_zscan_data_wrapper(
     n_populations = populations.shape[0]
     n_residuals = residuals.shape[0]
 
-    lib.fit_zscan_data(
+    fit_zscan_data(
         x_data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
         y_data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
         populations.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -350,7 +356,7 @@ if __name__ == "__main__":
     )
     populations = np.array([1.75e18, 0, 0, 0, 0])
     spec_pars = np.array(
-        [4.94e-18, 1.60e-17, 1.5e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
+        [4.94e-18, 1.60e-17, 1.95e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
     )
     num_x_pts = x_data.shape[0]
     num_datasets = 1
@@ -402,7 +408,7 @@ if __name__ == "__main__":
 
     populations = np.array([1.75e18, 0, 0, 0, 0])
     spec_pars = np.array(
-        [4.94e-18, 1.60e-17, 1.5e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
+        [4.94e-18, 1.60e-17, 1.95e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
     )
 
     num_x_pts = len(x_data_list[0])

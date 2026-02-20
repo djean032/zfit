@@ -8,7 +8,6 @@ contains
   subroutine fit_zscan_data(x_data, y_data, populations, residuals, error, t_slices, z_slices, sample_width, tau, wavelength, w0, M2, &
                         pulse_energy, spec_pars, num_x_pts, num_datasets, n_populations, n_residuals) bind(C, name="fit_zscan_data")
       !GCC$ attributes dllexport :: fit_zscan_data
-      !DEC$ attributes dllexport :: fit_zscan_data
       real(c_double), intent(in) :: x_data(*), y_data(*), populations(*), pulse_energy(*), tau, wavelength, w0, M2, sample_width
       integer(c_int), intent(in) :: t_slices, z_slices, num_x_pts, num_datasets, n_populations, n_residuals
       real(c_double), intent(inout) :: spec_pars(8)
