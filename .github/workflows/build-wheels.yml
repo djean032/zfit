@@ -52,9 +52,41 @@ jobs:
           name: wheels-linux-${{ matrix.arch }}
           path: wheelhouse/*.whl
 
+  build-windows:
+    name: Build (Windows, x86_64, gfortran)
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rtools (Windows)
+        run: |
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
+        shell: powershell
+      
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_BUILD: pip install cython numpy delvewheel
+          CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
+          FC: gfortran
+          CC: gcc
+          CXX: g++
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: wheelhouse/*.whl
+
   upload-pypi:
     name: Upload to PyPI
-    needs: [build-linux]
+    needs: [build-linux, build-windows]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
