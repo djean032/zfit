@@ -6,7 +6,7 @@ module chem
 
    abstract interface
       function expr_f(z_positions, z_samples, times, initial_population, &
-                           laser_intensities, frq, spec_pars) result(y)
+                      laser_intensities, frq, spec_pars) result(y)
          import :: c_double
          implicit none
          real(c_double), intent(in) :: z_positions(:)
@@ -35,7 +35,7 @@ module chem
 
    interface
       subroutine DLSODA(f, neq, y, t_in, t_out, itol, rtol, atol, itask, &
-                             istate, iopt, rwork, lrw, iwork, liw, jac, jt)
+                        istate, iopt, rwork, lrw, iwork, liw, jac, jt)
          import :: c_int, c_double
          import :: odepack_f, odepack_jac
          implicit none
@@ -69,9 +69,11 @@ module chem
    integer(c_int) :: cb_num_x_pts, cb_num_datasets
    procedure(expr_f), pointer :: cb_expr => null()
    real(c_double), allocatable :: cb_y_work(:)
-   
-   !$omp threadprivate(pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
-   real(c_double) :: pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8
+
+   !$omp threadprivate(pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
+   pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
+   real(c_double) :: pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
+                     pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8
 
 contains
 
@@ -80,12 +82,12 @@ contains
       real(c_double), intent(in) :: time, y(*)
       real(c_double), intent(out) :: ydot(neq)
       real(c_double) :: i1, i6, r1, r2, r4
-      
+
       i1 = y(1)
-      i6 = y(6) * pre_inv_hfrq
-      r1 = pre_k1 * i1 * i6
-      r2 = pre_k2 * y(2) * i6
-      r4 = pre_k3 * y(4) * i6
+      i6 = y(6)*pre_inv_hfrq
+      r1 = pre_k1*i1*i6
+      r2 = pre_k2*y(2)*i6
+      r4 = pre_k3*y(4)*i6
       ydot(1) = -r1 + y(2)*pre_inv_tau4 + y(4)*pre_inv_tau7
       ydot(2) = r1 - y(2)*pre_inv_tau4 - r2 + y(3)*pre_inv_tau6 - y(2)*pre_inv_tau5
       ydot(3) = r2 - y(3)*pre_inv_tau6
@@ -97,8 +99,8 @@ contains
       integer(c_int), intent(in) :: neq
       real(c_double), intent(in) :: time, y(*)
       real(c_double), intent(out) :: ydot(neq)
-      
-      ydot(1) = -(pre_k1*y(2) + pre_k2*y(3) + pre_k3*y(5)) * y(1)
+
+      ydot(1) = -(pre_k1*y(2) + pre_k2*y(3) + pre_k3*y(5))*y(1)
    end subroutine rhs_intensity
 
    subroutine jdum()
@@ -111,7 +113,7 @@ contains
       real(c_double), intent(out) :: y_ret(6)
       integer(c_int) :: istate, neq
       real(c_double) :: t_ret
-      
+
       neq = 5
       t_ret = t_in
       istate = 1
@@ -128,7 +130,7 @@ contains
       real(c_double), intent(out) :: y_ret(6)
       integer(c_int) :: istate, neq
       real(c_double) :: t_ret
-      
+
       neq = 1
       t_ret = t_in
       istate = 1
@@ -139,9 +141,10 @@ contains
    end subroutine solve_intensity
 
    function solve_system(z_positions, z_samples, times, initial_population, &
-                              laser_intensities, frq, spec_pars) result(y)
+                         laser_intensities, frq, spec_pars) result(y)
       !GCC$ attributes dllexport :: solve_system
-      real(c_double), intent(in) :: frq, initial_population(:), laser_intensities(:, :), spec_pars(8), times(:), z_positions(:), z_samples(:)
+      real(c_double), intent(in) :: frq, initial_population(:), laser_intensities(:, :), spec_pars(8), times(:), &
+                                    z_positions(:), z_samples(:)
       integer(c_int) :: pos_idx, sample_idx, t_idx
       real(c_double) :: current_intensity(6), current_population(6), final_intensities(size(z_positions), size(times)), &
                         intensity_0(size(z_positions)), normalized_intensities(size(z_positions)), pop(5, size(z_samples)), &
@@ -149,15 +152,15 @@ contains
       real(c_double) :: rwork(102)
       integer(c_int) :: iwork(25)
 
-      pre_inv_hfrq = 1.0_c_double / (h * frq)
+      pre_inv_hfrq = 1.0_c_double/(h*frq)
       pre_k1 = spec_pars(1)
       pre_k2 = spec_pars(2)
       pre_k3 = spec_pars(3)
-      pre_inv_tau4 = 1.0_c_double / spec_pars(4)
-      pre_inv_tau5 = 1.0_c_double / spec_pars(5)
-      pre_inv_tau6 = 1.0_c_double / spec_pars(6)
-      pre_inv_tau7 = 1.0_c_double / spec_pars(7)
-      pre_inv_tau8 = 1.0_c_double / spec_pars(8)
+      pre_inv_tau4 = 1.0_c_double/spec_pars(4)
+      pre_inv_tau5 = 1.0_c_double/spec_pars(5)
+      pre_inv_tau6 = 1.0_c_double/spec_pars(6)
+      pre_inv_tau7 = 1.0_c_double/spec_pars(7)
+      pre_inv_tau8 = 1.0_c_double/spec_pars(8)
 
       current_intensity(1) = 0.0_c_double
       current_intensity(2:6) = initial_population
@@ -187,7 +190,8 @@ contains
    subroutine fit_scan(data_x, data_y, expr, z_samples, &
                        times, initial_population, laser_intensities, fvec, frq, spec_pars, num_x_pts, num_datasets)
       integer(c_int), intent(in) :: num_datasets, num_x_pts
-      real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), times(:), z_samples(:)
+      real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), &
+                                            times(:), z_samples(:)
       real(c_double), intent(inout), target :: spec_pars(8)
       real(c_double), intent(inout) :: fvec(:)
       real(c_double), intent(in) :: frq
@@ -206,7 +210,7 @@ contains
       cb_num_x_pts = num_x_pts
       cb_num_datasets = num_datasets
       cb_expr => expr
-      allocate(cb_y_work(size(data_x)))
+      allocate (cb_y_work(size(data_x)))
 
       call lmdif1(fcn, size(fvec), 1, spec_pars(3), fvec, 1e-3_c_double, info, iwa, wa, size(wa))
 
@@ -218,7 +222,7 @@ contains
       cb_initial_population => null()
       cb_laser_intensities => null()
       cb_expr => null()
-      deallocate(cb_y_work)
+      deallocate (cb_y_work)
    end subroutine fit_scan
 
    subroutine fcn(m, n, x, fvec, iflag)
@@ -234,7 +238,8 @@ contains
       do i = 1, cb_num_datasets
          bidx = (i - 1)*cb_num_x_pts + 1
          eidx = i*cb_num_x_pts
-         cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
+         cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, &
+                                        cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
          fvec(bidx:eidx) = (cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx))
       end do
    end subroutine
