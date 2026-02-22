@@ -16,3 +16,8 @@ data
 libzfit.exp
 minpack.f90.exp
 libzfit.so
+fit_nstarts_1.png
+fit_nstarts_3.png
+fit_nstarts_5.png
+zfit_wrapper.c
+zfit_wrapper.cpython-313-aarch64-linux-gnu.so

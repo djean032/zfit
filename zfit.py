@@ -1,4 +1,3 @@
-import ctypes
 import numpy as np
 import time
 import os
@@ -7,86 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-lib_name = "libzfit.so"
-current_dir = os.getcwd()
-abs_path = os.path.abspath(os.path.join(current_dir, lib_name))
-lib = ctypes.CDLL(abs_path)
-
-fit_zscan_data = lib.fit_zscan_data
-fit_zscan_data.restype = None
-
-fit_zscan_data.argtypes = [
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double),
-    ctypes.POINTER(ctypes.c_double * 8),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_int),
-]
-
-
-def fit_zscan_data_wrapper(
-    x_data,
-    y_data,
-    populations,
-    t_slices,
-    z_slices,
-    sample_width,
-    tau,
-    wavelength,
-    w0,
-    M2,
-    pulse_energy,
-    spec_pars,
-    num_x_pts,
-    num_datasets,
-):
-    x_data = np.ascontiguousarray(x_data, dtype=np.float64)
-    y_data = np.ascontiguousarray(y_data, dtype=np.float64)
-    populations = np.ascontiguousarray(populations, dtype=np.float64)
-    pulse_energy = np.ascontiguousarray(pulse_energy, dtype=np.float64)
-    spec_pars = np.ascontiguousarray(spec_pars, dtype=np.float64)
-
-    residuals = np.zeros_like(y_data)
-    error = ctypes.c_double()
-
-    n_populations = populations.shape[0]
-    n_residuals = residuals.shape[0]
-
-    fit_zscan_data(
-        x_data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        y_data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        populations.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        residuals.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        ctypes.byref(error),
-        ctypes.byref(ctypes.c_int(t_slices)),
-        ctypes.byref(ctypes.c_int(z_slices)),
-        ctypes.byref(ctypes.c_double(sample_width)),
-        ctypes.byref(ctypes.c_double(tau)),
-        ctypes.byref(ctypes.c_double(wavelength)),
-        ctypes.byref(ctypes.c_double(w0)),
-        ctypes.byref(ctypes.c_double(M2)),
-        pulse_energy.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-        spec_pars.ctypes.data_as(ctypes.POINTER(ctypes.c_double * 8)),
-        ctypes.byref(ctypes.c_int(num_x_pts)),
-        ctypes.byref(ctypes.c_int(num_datasets)),
-        ctypes.byref(ctypes.c_int(n_populations)),
-        ctypes.byref(ctypes.c_int(n_residuals)),
-    )
-
-    return residuals, error.value, spec_pars
+import zfit_wrapper
 
 
 def parse_pzy_file(filepath):
@@ -118,7 +38,7 @@ def parse_pzy_file(filepath):
 
 def plot_datasets(x_data, y_data, residuals, num_x_pts, num_datasets, filename):
     fig, axes = plt.subplots(
-        num_datasets, 1, figsize=(10, 4 * num_datasets), squeeze=False
+        num_datasets, 2, figsize=(14, 4 * num_datasets), squeeze=False
     )
 
     for i in range(num_datasets):
@@ -129,13 +49,22 @@ def plot_datasets(x_data, y_data, residuals, num_x_pts, num_datasets, filename):
         y = y_data[bidx:eidx]
         res = residuals[bidx:eidx]
 
+        # Fit plot
         axes[i, 0].scatter(x, y, label="Data", alpha=0.7)
         axes[i, 0].plot(x, y - res, label="Fit", color="orange")
         axes[i, 0].set_xlabel("z position")
         axes[i, 0].set_ylabel("Normalized transmittance")
-        axes[i, 0].set_title(f"Dataset {i + 1}")
+        axes[i, 0].set_title(f"Dataset {i + 1} - Fit")
         axes[i, 0].legend()
         axes[i, 0].grid(True)
+
+        # Residuals plot
+        axes[i, 1].scatter(x, res, alpha=0.7, color="red")
+        axes[i, 1].axhline(y=0, color="black", linestyle="--", alpha=0.5)
+        axes[i, 1].set_xlabel("z position")
+        axes[i, 1].set_ylabel("Residual")
+        axes[i, 1].set_title(f"Dataset {i + 1} - Residuals")
+        axes[i, 1].grid(True)
 
     plt.tight_layout()
     plt.savefig(filename)
@@ -247,7 +176,8 @@ if __name__ == "__main__":
             19.2,
             19.6,
             20,
-        ]
+        ],
+        dtype=np.float64,
     )
     y_data = np.array(
         [
@@ -352,92 +282,114 @@ if __name__ == "__main__":
             0.999280394,
             1.00025911,
             0.999802106,
-        ]
+        ],
+        dtype=np.float64,
     )
-    populations = np.array([1.75e18, 0, 0, 0, 0])
-    spec_pars = np.array(
-        [4.94e-18, 1.60e-17, 1.2e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
-    )
-    num_x_pts = x_data.shape[0]
+    populations = np.array([1.75e18, 0, 0, 0, 0], dtype=np.float64)
+    pulse_energy = np.array([50e-9], dtype=np.float64)
+    num_x_pts = len(x_data)
     num_datasets = 1
-    start = time.time()
-    print("Running single dataset.\n")
-    residuals, error, spec_pars = fit_zscan_data_wrapper(
-        x_data,
-        y_data,
-        populations,
-        t_slices=11,
-        z_slices=11,
-        sample_width=0.1,
-        tau=8e-9,
-        wavelength=532e-9,
-        w0=14.5e-6,
-        M2=1.0,
-        pulse_energy=np.array([50e-9]),
-        spec_pars=spec_pars,
-        num_x_pts=num_x_pts,
-        num_datasets=num_datasets,
-    )
-    end = time.time()
 
-    print(f"Elapsed time: {end - start}")
-    print(f"Error: {error}")
-    print(f"Spec pars: {spec_pars}")
+    # Test with 1, 3, and 5 starting points
+    for n_starts in [1, 3, 5]:
+        spec_pars = np.array(
+            [
+                4.94e-18,
+                1.60e-17,
+                1.5e-17,
+                1.00e-12,
+                1.00e-12,
+                1.00e-12,
+                1.29e-7,
+                1.00e-12,
+            ],
+            dtype=np.float64,
+        )
 
-    plot_datasets(x_data, y_data, residuals, num_x_pts, num_datasets, "fit_single.png")
+        print(f"\n{'=' * 60}")
+        print(f"Running with {n_starts} starting point(s)")
+        print(f"{'=' * 60}")
 
-    data_files = [
-        "data/3-Br-pbt_532 nm_103.2 nJ.pzy",
-        "data/3-Br-pbt_532 nm_204.1 nJ.pzy",
-        "data/3-Br-pbt_532 nm_310 nj.pzy",
-    ]
+        start = time.time()
+        residuals, error, spec_pars_result = zfit_wrapper.fit_zscan(
+            x_data,
+            y_data,
+            populations,
+            t_slices=11,
+            z_slices=11,
+            sample_width=0.1,
+            tau=9e-9,
+            wavelength=532e-9,
+            w0=14.5e-6,
+            M2=1.2,
+            pulse_energy=pulse_energy,
+            spec_pars=spec_pars,
+            num_x_pts=num_x_pts,
+            num_datasets=num_datasets,
+            n_starts=n_starts,
+        )
+        end = time.time()
 
-    x_data_list = []
-    y_data_list = []
-    pulse_energies = []
+        print(f"Elapsed time: {end - start:.4f} seconds")
+        print(f"Error: {error}")
+        print(f"spec_pars[2] (k3): {spec_pars[2]:.6e} -> {spec_pars_result[2]:.6e}")
 
-    for filepath in data_files:
-        z_data, y_data, pulse_energy = parse_pzy_file(filepath)
-        x_data_list.append(z_data)
-        y_data_list.append(y_data)
-        pulse_energies.append(pulse_energy)
+        plot_datasets(
+            x_data,
+            y_data,
+            residuals,
+            num_x_pts,
+            num_datasets,
+            f"fit_nstarts_{n_starts}.png",
+        )
 
-    x_data = np.concatenate(x_data_list)
-    y_data = np.concatenate(y_data_list)
-    pulse_energy = np.array(pulse_energies)
-
-    populations = np.array([1.75e18, 0, 0, 0, 0])
-    spec_pars = np.array(
-        [4.94e-18, 1.60e-17, 1.95e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
-    )
-
-    num_x_pts = len(x_data_list[0])
-    num_datasets = len(data_files)
-
-    start = time.time()
-    print("Running multiple datasets.\n")
-    residuals, error, spec_pars = fit_zscan_data_wrapper(
-        x_data,
-        y_data,
-        populations,
-        t_slices=11,
-        z_slices=11,
-        sample_width=0.1,
-        tau=8e-9,
-        wavelength=532e-9,
-        w0=14.5e-6,
-        M2=1.0,
-        pulse_energy=pulse_energy,
-        spec_pars=spec_pars,
-        num_x_pts=num_x_pts,
-        num_datasets=num_datasets,
-    )
-    end = time.time()
-
-    print(f"Elapsed time: {end - start}")
-    print(f"Error: {error}")
-    print(f"Spec pars: {spec_pars}")
-
-    plot_datasets(
-        x_data, y_data, residuals, num_x_pts, num_datasets, "fit_multiple.png"
-    )
+    # # Multi-dataset test (commented out)
+    # data_files = [
+    #     "data/3-Br-pbt_532 nm_103.2 nJ.pzy",
+    #     "data/3-Br-pbt_532 nm_204.1 nJ.pzy",
+    #     "data/3-Br-pbt_532 nm_310 nj.pzy",
+    # ]
+    #
+    # x_data_list = []
+    # y_data_list = []
+    # pulse_energies = []
+    #
+    # for filepath in data_files:
+    #     z_data, y_data, pulse_energy = parse_pzy_file(filepath)
+    #     x_data_list.append(z_data)
+    #     y_data_list.append(y_data)
+    #     pulse_energies.append(pulse_energy)
+    #
+    # x_data = np.concatenate(x_data_list)
+    # y_data = np.concatenate(y_data_list)
+    # pulse_energy = np.array(pulse_energies)
+    #
+    # populations = np.array([1.75e18, 0, 0, 0, 0], dtype=np.float64)
+    # spec_pars = np.array(
+    #     [4.94e-18, 1.60e-17, 1.95e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12],
+    #     dtype=np.float64
+    # )
+    #
+    # num_x_pts = len(x_data_list[0])
+    # num_datasets = len(data_files)
+    #
+    # start = time.time()
+    # print("\nRunning multiple datasets.\n")
+    # residuals, error, spec_pars_result = zfit_wrapper.fit_zscan(
+    #     x_data, y_data, populations,
+    #     t_slices=11, z_slices=11,
+    #     sample_width=0.1, tau=8e-9,
+    #     wavelength=532e-9, w0=14.5e-6, M2=1.0,
+    #     pulse_energy=pulse_energy,
+    #     spec_pars=spec_pars,
+    #     num_x_pts=num_x_pts,
+    #     num_datasets=num_datasets,
+    #     n_starts=3
+    # )
+    # end = time.time()
+    #
+    # print(f"Elapsed time: {end - start}")
+    # print(f"Error: {error}")
+    # print(f"Spec pars: {spec_pars_result}")
+    #
+    # plot_datasets(x_data, y_data, residuals, num_x_pts, num_datasets, "fit_multiple.png")
