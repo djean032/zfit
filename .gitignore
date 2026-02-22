@@ -9,6 +9,8 @@ obj/
 *.exp
 *.so
 *.a
+*.pyd
+*.pyc
 
 # Python
 __pycache__/
@@ -17,12 +19,13 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
+wheels/
 *.egg
 
-# Cython
+# Cython generated
 *.c
 !src/*.c
-*.html
+zfit_wrapper.c
 
 # Generated plots
 fit_*.png
@@ -33,6 +36,8 @@ fit_*.png
 .idea/
 *.swp
 *.swo
+_cmake_test*
 
 # Data files
 data/
+build_cmake

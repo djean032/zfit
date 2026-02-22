@@ -1,19 +1,11 @@
-from setuptools import setup, Extension
-from Cython.Build import cythonize
-import numpy as np
+"""
+Setup script for zfit.
 
-ext_modules = [
-    Extension(
-        "zfit_wrapper",
-        sources=["zfit_wrapper.pyx"],
-        include_dirs=[np.get_include()],
-        library_dirs=["."],
-        libraries=["zfit", "gomp"],
-        extra_link_args=["-Wl,-rpath,."],
-    )
-]
+This is a minimal fallback for backward compatibility.
+Recommended: Use 'pip install .' which uses pyproject.toml and scikit-build-core.
+"""
 
-setup(
-    name="zfit_wrapper",
-    ext_modules=cythonize(ext_modules, language_level="3"),
-)
+from setuptools import setup
+
+if __name__ == "__main__":
+    setup()
