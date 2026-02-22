@@ -9,12 +9,10 @@ module global
 
 contains
   function linspace(first, last, n)
-    real(c_double), intent(in) :: first
-    real(c_double), intent(in) :: last
     integer(c_int), intent(in) :: n
+    real(c_double), intent(in) :: first, last
     integer(c_int) :: i
-    real(c_double) :: span
-    real(c_double) :: linspace(n)
+    real(c_double) :: linspace(n), span
 
     span = last - first
 

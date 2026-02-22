@@ -8,20 +8,17 @@ contains
   subroutine fit_zscan_data(x_data, y_data, populations, residuals, error, t_slices, z_slices, sample_width, tau, wavelength, w0, M2, &
                         pulse_energy, spec_pars, num_x_pts, num_datasets, n_populations, n_residuals) bind(C, name="fit_zscan_data")
       !GCC$ attributes dllexport :: fit_zscan_data
-      real(c_double), intent(in) :: x_data(*), y_data(*), populations(*), pulse_energy(*), tau, wavelength, w0, M2, sample_width
-      integer(c_int), intent(in) :: t_slices, z_slices, num_x_pts, num_datasets, n_populations, n_residuals
+      integer(c_int), intent(in) :: n_populations, n_residuals, num_datasets, num_x_pts, t_slices, z_slices
+      real(c_double), intent(in) :: M2, sample_width, tau, w0, wavelength, populations(*), pulse_energy(*), x_data(*), y_data(*)
       real(c_double), intent(inout) :: spec_pars(8)
-      real(c_double), intent(out) :: residuals(*), error
-      integer(c_int) :: z_pos_slices, idx, zdx, tdx, loc(1), size_exp, i, bidx, eidx
-      real(c_double) :: wid, zr, frq
-      real(c_double), allocatable :: z(:), fvec(:), t(:), intensities(:, :, :)
-      real(c_double), allocatable :: data_x(:), data_y(:), data_pop(:)
+      real(c_double), intent(out) :: error, residuals(*)
+      integer(c_int) :: bidx, eidx, idx, loc(1), tdx, zdx
+      real(c_double) :: frq, wid, zr
+      real(c_double), allocatable :: data_x(:), data_pop(:), data_y(:), fvec(:), intensities(:, :, :), t(:), z(:)
 
-      z_pos_slices = num_x_pts
-
-      allocate (z(z_slices), fvec(z_pos_slices*num_datasets))
-      allocate (t(z_slices), intensities(z_pos_slices, t_slices, num_datasets))
-      allocate (data_x(z_pos_slices*num_datasets), data_y(z_pos_slices*num_datasets), data_pop(n_populations))
+      allocate (z(z_slices), fvec(num_x_pts*num_datasets))
+      allocate (t(z_slices), intensities(num_x_pts, t_slices, num_datasets))
+      allocate (data_x(num_x_pts*num_datasets), data_y(num_x_pts*num_datasets), data_pop(n_populations))
 
       data_x = x_data(1:num_x_pts*num_datasets)/1000
       data_y = y_data(1:num_x_pts*num_datasets)
@@ -45,7 +42,7 @@ contains
       do idx = 1, num_datasets
          bidx = (idx - 1)*num_x_pts + 1
          do tdx = 1, t_slices
-            do zdx = 1, z_pos_slices
+             do zdx = 1, num_x_pts
                intensities(zdx, tdx, idx) = irradiance(0.0_c_double, t(tdx), data_x(bidx + zdx - 1), pulse_energy(idx), wid, w0, zr)
             end do
          end do
@@ -53,7 +50,7 @@ contains
 
       call fit_scan(data_x, data_y, solve_system, z, &
                     t, data_pop, intensities, fvec, frq, spec_pars, num_x_pts, num_datasets)
-      error = enorm(z_pos_slices*num_datasets, fvec)
+      error = enorm(num_x_pts*num_datasets, fvec)
       residuals(1:n_residuals) = fvec(1:n_residuals)
 
    end subroutine

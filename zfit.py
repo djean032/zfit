@@ -356,7 +356,7 @@ if __name__ == "__main__":
     )
     populations = np.array([1.75e18, 0, 0, 0, 0])
     spec_pars = np.array(
-        [4.94e-18, 1.60e-17, 1.95e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
+        [4.94e-18, 1.60e-17, 1.2e-17, 1.00e-12, 1.00e-12, 1.00e-12, 1.29e-7, 1.00e-12]
     )
     num_x_pts = x_data.shape[0]
     num_datasets = 1
