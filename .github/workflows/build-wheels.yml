@@ -9,19 +9,25 @@ on:
 
 jobs:
   build-linux:
-    name: Build (Linux, ${{ matrix.arch }}, gfortran)
+    name: Build (Linux, ${{ matrix.arch }}, ${{ matrix.compiler }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { arch: x86_64, runner: ubuntu-latest }
-          - { arch: aarch64, runner: ubuntu-24.04-arm }
+          - { arch: x86_64, runner: ubuntu-latest, compiler: gfortran }
+          - { arch: aarch64, runner: ubuntu-24.04-arm, compiler: gfortran }
+    
+    env:
+      FC: ${{ matrix.compiler }}
+      CC: gcc
+      CXX: g++
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install all build dependencies
+      - name: Install build dependencies (gfortran)
+        if: matrix.compiler == 'gfortran'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -43,45 +49,53 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD: pip install cython numpy
-          FC: gfortran
-          CC: gcc
-          CXX: g++
+          CIBW_ENVIRONMENT_LINUX: FC=${{ matrix.compiler }} CC=gcc CXX=g++
       
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-${{ matrix.arch }}
+          name: wheels-linux-${{ matrix.arch }}-${{ matrix.compiler }}
           path: wheelhouse/*.whl
 
   build-windows:
-    name: Build (Windows, x86_64, gfortran)
+    name: Build (Windows, x86_64, ${{ matrix.compiler }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: AMD64, compiler: gfortran }
+    
+    env:
+      FC: ${{ matrix.compiler }}
+      CC: gcc
+      CXX: g++
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rtools (Windows)
+      - name: Install Rtools (gfortran)
+        if: matrix.compiler == 'gfortran'
         run: |
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          choco install rtools ninja -y --no-progress --force
           echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
         shell: powershell
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
         env:
-          CIBW_ARCHS: AMD64
+          CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*-musllinux_* pp*"
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD: pip install cython numpy delvewheel
+          CIBW_BEFORE_BUILD: pip install cython numpy delvewheel ninja
           CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
-          FC: gfortran
-          CC: gcc
-          CXX: g++
+          CIBW_ENVIRONMENT_WINDOWS: FC=gfortran CC=gcc CXX=g++
+          CIBW_PATH_WINDOWS: C:\rtools40\ucrt64\bin
       
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows-x86_64
+          name: wheels-windows-${{ matrix.arch }}-${{ matrix.compiler }}
           path: wheelhouse/*.whl
 
   upload-pypi:

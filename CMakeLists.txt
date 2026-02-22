@@ -16,12 +16,33 @@ find_package(OpenMP REQUIRED)
 # =============================================================================
 # Compiler-specific flags
 # =============================================================================
-if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC -std=legacy -fallow-argument-mismatch")
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC")
     set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -fcheck=all -fbacktrace")
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+    # Legacy ODEPACK files need special flags
+    set(LEGACY_FORTRAN_FLAGS "-std=legacy -fallow-argument-mismatch")
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+    # Intel ifx (LLVM-based, oneAPI)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC")
     set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -check all -traceback")
+    set(LEGACY_FORTRAN_FLAGS "")
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    # Intel ifort (classic, deprecated)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC")
+    set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -check all -traceback")
+    set(LEGACY_FORTRAN_FLAGS "")
+endif()
+
+message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} (${CMAKE_Fortran_COMPILER})")
+
+# Apply legacy flags to fixed-form Fortran files (.f)
+if(DEFINED LEGACY_FORTRAN_FLAGS AND NOT LEGACY_FORTRAN_FLAGS STREQUAL "")
+    set_source_files_properties(
+        src/opkdmain.f
+        src/opkda1.f
+        src/opkda2.f
+        PROPERTIES COMPILE_FLAGS "${LEGACY_FORTRAN_FLAGS}"
+    )
 endif()
 
 # =============================================================================
