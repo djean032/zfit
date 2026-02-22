@@ -69,7 +69,7 @@ set_target_properties(zfit PROPERTIES
 # Python extension
 # =============================================================================
 if(BUILD_PYTHON)
-    find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
     
     # Find Cython
     find_program(CYTHON_EXECUTABLE 
@@ -109,7 +109,7 @@ if(BUILD_PYTHON)
     
     target_link_libraries(zfit_wrapper 
         zfit
-        Python::Python
+        Python::Module
     )
     
     # Set module properties

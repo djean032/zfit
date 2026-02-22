@@ -24,3 +24,14 @@ build-dir = "build/{wheel_tag}"
 
 [tool.scikit-build.cmake.define]
 CMAKE_BUILD_TYPE = {env="CMAKE_BUILD_TYPE", default="Release"}
+
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+skip = "*-musllinux_* pp*"
+build-frontend = "build"
+test-command = "pytest {package}/test -v"
+test-requires = ["pytest", "scipy"]
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
