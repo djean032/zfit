@@ -71,7 +71,7 @@ module chem
    real(c_double), allocatable :: cb_y_work(:)
 
    !$omp threadprivate(pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
-   pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
+   !$omp               pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
    real(c_double) :: pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
                      pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8
 
