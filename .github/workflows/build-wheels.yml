@@ -73,11 +73,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rtools (gfortran)
+      - name: Setup gfortran path (Windows)
         if: matrix.compiler == 'gfortran'
         run: |
-          choco install rtools ninja -y --no-progress --force
-          echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
+          echo "C:\rtools45\ucrt64\bin" >> $env:GITHUB_PATH
         shell: powershell
       
       - name: Build wheels with cibuildwheel
@@ -91,7 +90,7 @@ jobs:
           CIBW_BEFORE_BUILD: pip install cython numpy delvewheel ninja
           CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
           CIBW_ENVIRONMENT_WINDOWS: FC=gfortran CC=gcc CXX=g++
-          CIBW_PATH_WINDOWS: C:\rtools40\ucrt64\bin
+          CIBW_PATH_WINDOWS: C:\rtools45\ucrt64\bin
       
       - uses: actions/upload-artifact@v4
         with:
