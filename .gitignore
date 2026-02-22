@@ -1,23 +1,38 @@
-subprojects/packagecache
-subprojects/minpack
-subprojects/minpack
-mod
-obj
-test
-libzfit.a
-libzfit.dll
-fit_multiple.png
-fit_single.png
-data
-.fprettify.rc
+# Build artifacts
+build/
+mod/
+obj/
+*.o
 *.mod
 *.lib
 *.dll
-libzfit.exp
-minpack.f90.exp
-libzfit.so
-fit_nstarts_1.png
-fit_nstarts_3.png
-fit_nstarts_5.png
-zfit_wrapper.c
-zfit_wrapper.cpython-313-aarch64-linux-gnu.so
+*.exp
+*.so
+*.a
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+dist/
+*.egg
+
+# Cython
+*.c
+!src/*.c
+*.html
+
+# Generated plots
+fit_*.png
+
+# IDE and tools
+.ruff_cache/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data files
+data/
