@@ -118,6 +118,18 @@ if(BUILD_PYTHON)
         POSITION_INDEPENDENT_CODE ON
     )
     
+    if(UNIX AND NOT APPLE)
+        set_target_properties(zfit_wrapper PROPERTIES
+            INSTALL_RPATH "$ORIGIN/lib"
+            BUILD_RPATH "${CMAKE_BINARY_DIR}/lib"
+        )
+    elseif(APPLE)
+        set_target_properties(zfit_wrapper PROPERTIES
+            INSTALL_RPATH "@loader_path/lib"
+            BUILD_RPATH "${CMAKE_BINARY_DIR}/lib"
+        )
+    endif()
+    
     # Platform-specific extension suffix
     if(WIN32)
         set_target_properties(zfit_wrapper PROPERTIES SUFFIX ".pyd")
@@ -188,6 +200,7 @@ if(BUILD_PYTHON)
     
     install(FILES 
         ${CMAKE_SOURCE_DIR}/zfit.py
+        ${CMAKE_SOURCE_DIR}/zfit_wrapper.pyi
         DESTINATION .
     )
 endif()
