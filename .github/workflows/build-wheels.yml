@@ -57,12 +57,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Intel Fortran
-        uses: fortran-lang/setup-fortran@v1
-        with:
-          compiler: intel
-          version: '2025.0'
-      
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
         env:
@@ -72,7 +66,11 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD: pip install cython numpy
-          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
+          CIBW_BEFORE_ALL_LINUX: |
+            yum install -y yum-utils
+            yum-config-manager --add-repo https://yum.repos.intel.com/intel-gpg-keys/intel-oneapi.repo
+            yum install -y intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp
+          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx PATH="/opt/intel/oneapi/compiler/latest/bin:$PATH"
       
       - uses: actions/upload-artifact@v4
         with:
@@ -102,7 +100,6 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD: pip install cython numpy delvewheel
           CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
-          CIBW_ENVIRONMENT_WINDOWS: FC=ifx
       
       - uses: actions/upload-artifact@v4
         with:
