@@ -31,9 +31,15 @@ jobs:
             echo "=== Installed files ==="
             pip show -f zfit
             echo ""
-            echo "=== Checking RPATH ==="
+            echo "=== Checking RPATH on extension ==="
+            find /tmp -name "zfit_wrapper*.so" -exec patchelf --print-rpath {} \; 2>/dev/null || echo "patchelf not available"
+            echo ""
+            echo "=== Library location ==="
+            find /tmp -name "libzfit.so" 2>/dev/null
+            echo ""
+            echo "=== Test import ==="
             python -c "import zfit_wrapper; print('Import successful')"
-          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_TEST_REQUIRES: pytest scipy patchelf
           CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
       
       - uses: actions/upload-artifact@v4

@@ -39,7 +39,6 @@ fortran_sources = files(
 zfit_lib = shared_library('zfit', fortran_sources,
   dependencies: omp_dep,
   install: true,
-  install_dir: py.get_install_dir(),
 )
 
 # Cython extension
@@ -54,7 +53,6 @@ py.extension_module('zfit_wrapper', cython_sources,
   dependencies: [py_dep, np_dep],
   link_with: zfit_lib,
   install: true,
-  install_rpath: '$ORIGIN',
 )
 
 # Install Python files
