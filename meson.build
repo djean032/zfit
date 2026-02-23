@@ -42,6 +42,13 @@ zfit_lib = shared_library('zfit', fortran_sources,
   install_dir: py.get_install_dir(),
 )
 
+# RPATH for finding libzfit at runtime
+if host_machine.system() == 'linux' or host_machine.system() == 'darwin'
+  rpath_args = ['-Wl,-rpath,$ORIGIN']
+else
+  rpath_args = []
+endif
+
 # Cython extension
 cython = find_program('cython')
 cython_sources = custom_target('zfit_wrapper_c',
@@ -54,6 +61,7 @@ py.extension_module('zfit_wrapper', cython_sources,
   dependencies: [py_dep, np_dep],
   link_with: zfit_lib,
   install: true,
+  link_args: rpath_args,
 )
 
 # Install Python files
