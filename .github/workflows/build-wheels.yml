@@ -61,8 +61,8 @@ jobs:
         uses: rscohn2/setup-oneapi@v0
         with:
           components: |
-            intel.oneapi.lin.ifort-compiler
-            intel.oneapi.lin.dpcpp-cpp-compiler
+            ifx
+            icx
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
@@ -90,7 +90,7 @@ jobs:
       - name: Install Intel oneAPI
         uses: rscohn2/setup-oneapi@v0
         with:
-          components: intel.oneapi.win.ifort-compiler
+          components: ifx
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
