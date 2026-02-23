@@ -64,7 +64,7 @@ cython_sources = custom_target('zfit_wrapper_c',
 
 py.extension_module('zfit_wrapper', cython_sources,
   dependencies: [py_dep, np_dep],
-  link_with: zfit_lib,
+  link_whole: zfit_lib,
   install: true,
 )
 
