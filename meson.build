@@ -44,6 +44,8 @@ fortran_sources = files(
 # Windows gfortran / Linux: shared_library with link_with
 ff_id = ff.get_id()
 is_windows_intel = host_machine.system() == 'windows' and ('intel' in ff_id)
+message('Fortran compiler ID: ' + ff_id)
+message('Is Windows Intel: ' + is_windows_intel.to_string())
 
 if is_windows_intel
   # Windows Intel: static_library
