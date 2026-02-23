@@ -43,9 +43,9 @@ fortran_sources = files(
 # Windows Intel: static_library with link_whole (required for proper linking with Intel ifx)
 # Windows gfortran / Linux: shared_library with link_with
 ff_id = ff.get_id()
-is_intel_on_windows = host_machine.system() == 'windows' and (ff_id == 'intel-llvm' or ff_id == 'intel')
+is_windows_intel = host_machine.system() == 'windows' and ('intel' in ff_id)
 
-if is_intel_on_windows
+if is_windows_intel
   # Windows Intel: static_library
   zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
