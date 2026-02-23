@@ -89,7 +89,7 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD: pip install cython numpy delvewheel ninja
           CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
-          CIBW_ENVIRONMENT_WINDOWS: FC=gfortran CC=gcc CXX=g++
+          CIBW_ENVIRONMENT_WINDOWS: FC=gfortran CC=gcc CXX=g++ CMAKE_GENERATOR=Ninja
           CIBW_PATH_WINDOWS: C:\rtools45\ucrt64\bin
       
       - uses: actions/upload-artifact@v4

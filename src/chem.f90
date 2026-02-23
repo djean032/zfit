@@ -142,7 +142,6 @@ contains
 
    function solve_system(z_positions, z_samples, times, initial_population, &
                          laser_intensities, frq, spec_pars) result(y)
-      !GCC$ attributes dllexport :: solve_system
       real(c_double), intent(in) :: frq, initial_population(:), laser_intensities(:, :), spec_pars(8), times(:), &
                                     z_positions(:), z_samples(:)
       integer(c_int) :: pos_idx, sample_idx, t_idx

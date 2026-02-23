@@ -11,7 +11,14 @@ option(BUILD_TESTING "Build tests" ON)
 # =============================================================================
 # Find dependencies
 # =============================================================================
-find_package(OpenMP REQUIRED)
+# On Windows with MinGW/gfortran, OpenMP needs special handling
+# MSVC OpenMP (vcomp) is incompatible with MinGW OpenMP (libgomp)
+if(WIN32 AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(USE_MINGW_OPENMP TRUE)
+else()
+    find_package(OpenMP REQUIRED)
+    set(USE_MINGW_OPENMP FALSE)
+endif()
 
 # =============================================================================
 # Compiler-specific flags
@@ -63,7 +70,15 @@ set(FORTRAN_SOURCES
 # Build shared library
 # =============================================================================
 add_library(zfit SHARED ${FORTRAN_SOURCES})
-target_link_libraries(zfit OpenMP::OpenMP_Fortran)
+
+# OpenMP linking
+if(USE_MINGW_OPENMP)
+    # MinGW on Windows: add -fopenmp flag and link libgomp
+    target_compile_options(zfit PRIVATE -fopenmp)
+    target_link_libraries(zfit gomp)
+elseif(OpenMP_FOUND)
+    target_link_libraries(zfit OpenMP::OpenMP_Fortran)
+endif()
 
 # Platform-specific configuration
 if(UNIX AND NOT APPLE)

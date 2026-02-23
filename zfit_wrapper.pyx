@@ -1,8 +1,11 @@
 # cython: language_level=3
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 
 from cython.parallel import prange
 import numpy as np
 cimport numpy as np
+
+np.import_array()
 
 cdef extern void fit_zscan_data(
     double* x_data, double* y_data, double* populations,

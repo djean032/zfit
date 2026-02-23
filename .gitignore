@@ -41,3 +41,5 @@ _cmake_test*
 # Data files
 data/
 build_cmake
+build_fortran
+build_fortran
