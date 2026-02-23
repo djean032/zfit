@@ -40,9 +40,13 @@ fortran_sources = files(
 )
 
 # Build library based on OS and compiler
-# Windows Intel: static_library with link_whole (required for proper linking)
+# Windows Intel: static_library with link_whole (required for proper linking with Intel ifx)
 # Windows gfortran / Linux: shared_library with link_with
-if host_machine.system() == 'windows' and (ff.get_id() == 'intel-llvm' or ff.get_id() == 'intel')
+import os
+env_cc = os.environ.get('CC', '')
+is_intel_on_windows = host_machine.system() == 'windows' and (env_cc == 'cl' or env_cc == 'icx')
+
+if is_intel_on_windows
   # Windows Intel: static_library
   zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
