@@ -62,11 +62,21 @@ cython_sources = custom_target('zfit_wrapper_c',
   command: [cython, '-3', '-o', '@OUTPUT@', '@INPUT@'],
 )
 
-py.extension_module('zfit_wrapper', cython_sources,
-  dependencies: [py_dep, np_dep],
-  link_whole: zfit_lib,
-  install: true,
-)
+# Windows: use link_whole with static_library
+# Linux: use link_with with shared_library
+if host_machine.system() == 'windows'
+  py.extension_module('zfit_wrapper', cython_sources,
+    dependencies: [py_dep, np_dep],
+    link_whole: zfit_lib,
+    install: true,
+  )
+else
+  py.extension_module('zfit_wrapper', cython_sources,
+    dependencies: [py_dep, np_dep],
+    link_with: zfit_lib,
+    install: true,
+  )
+endif
 
 # Install Python files
 py.install_sources(
