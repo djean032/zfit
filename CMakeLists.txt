@@ -13,6 +13,7 @@ option(BUILD_TESTING "Build tests" ON)
 # =============================================================================
 # On Windows with MinGW/gfortran, OpenMP needs special handling
 # MSVC OpenMP (vcomp) is incompatible with MinGW OpenMP (libgomp)
+# Intel Fortran has its own OpenMP runtime
 if(WIN32 AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     set(USE_MINGW_OPENMP TRUE)
 else()
@@ -30,14 +31,26 @@ if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     set(LEGACY_FORTRAN_FLAGS "-std=legacy -fallow-argument-mismatch")
 elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
     # Intel ifx (LLVM-based, oneAPI)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3")
     set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -check all -traceback")
     set(LEGACY_FORTRAN_FLAGS "")
+    # OpenMP flag for Intel on Windows
+    if(WIN32)
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /Qopenmp")
+    else()
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qopenmp")
+    endif()
 elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
     # Intel ifort (classic, deprecated)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3")
     set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -check all -traceback")
     set(LEGACY_FORTRAN_FLAGS "")
+    # OpenMP flag for Intel on Windows
+    if(WIN32)
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /Qopenmp")
+    else()
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qopenmp")
+    endif()
 endif()
 
 message(STATUS "Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} (${CMAKE_Fortran_COMPILER})")
@@ -76,6 +89,9 @@ if(USE_MINGW_OPENMP)
     # MinGW on Windows: add -fopenmp flag and link libgomp
     target_compile_options(zfit PRIVATE -fopenmp)
     target_link_libraries(zfit gomp)
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel" AND WIN32)
+    # Intel Fortran on Windows: OpenMP is handled via /Qopenmp flag above
+    # No additional linking needed - Intel handles this
 elseif(OpenMP_FOUND)
     target_link_libraries(zfit OpenMP::OpenMP_Fortran)
 endif()
