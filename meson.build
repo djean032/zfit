@@ -44,10 +44,8 @@ fortran_sources = files(
 # Linux/macOS: shared library with link_with
 if host_machine.system() == 'windows'
   # Windows: static library - embed all objects into extension
-  # gfortran needs quadmath for static linking
   zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
-    link_args: ff.get_id() == 'gcc' ? ['-lquadmath'] : [],
     install: false,
   )
   use_link_whole = true
@@ -73,6 +71,7 @@ if use_link_whole
   py.extension_module('zfit_wrapper', cython_sources,
     dependencies: [py_dep, np_dep],
     link_whole: zfit_lib,
+    link_args: ff.get_id() == 'gcc' ? ['-lquadmath'] : [],
     install: true,
   )
 else
