@@ -36,12 +36,8 @@ jobs:
             gpgkey=https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
             EOF
             dnf install -y --setopt=install_weak_deps=False intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
-          CIBW_ENVIRONMENT_LINUX: |
-            FC=ifx
-            CC=icx
-            CXX=icpx
-            PATH: /opt/intel/oneapi/compiler/2025.0/bin:/opt/intel/oneapi/mpi/2021.14/bin:$PATH
-            LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/2025.0/lib:/opt/intel/oneapi/mpi/2021.14/lib:$LD_LIBRARY_PATH
+          CIBW_BEFORE_BUILD_LINUX: source /opt/intel/oneapi/setvars.sh
+          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
       
       - uses: actions/upload-artifact@v4
@@ -68,12 +64,11 @@ jobs:
         if: steps.cache-intel.outputs.cache-hit != 'true'
         shell: powershell
         run: |
-          # Download Intel HPC Toolkit (includes Fortran and C++)
-          $url = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9e86b555-f238-4dea-b4b2-01b243e42483/intel-hpckit-2025.0.1.27_offline.exe"
+          $url = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/36f868e9-84b3-4b4f-90ef-ca84092cae6a/intel-oneapi-hpc-toolkit-2025.3.1.54_offline.exe"
           Write-Host "Downloading Intel oneAPI from $url"
           Invoke-WebRequest -Uri $url -OutFile intel_hpckit.exe -UseBasicParsing
           Write-Host "Installing Intel oneAPI..."
-          Start-Process -FilePath ".\intel_hpckit.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          Start-Process -FilePath ".\intel_hpckit.exe" -ArgumentList "-s -a --silent --eula accept -p=NEED_VS2019_INTEGRATION=0" -Wait
           Remove-Item intel_hpckit.exe
       
       - name: Build wheels with cibuildwheel
