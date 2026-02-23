@@ -12,34 +12,22 @@ jobs:
     name: Build (Linux, x86_64, Intel ifx)
     runs-on: ubuntu-22.04
     
-    env:
-      LINUX_FORTRANKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9e86b555-f238-4dea-b4b2-01b243e42483/intel-fortran-essentials-2025.0.1.27_offline.sh
-      LINUX_CPPKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh
-    
     steps:
       - uses: actions/checkout@v4
       
-      - name: Cache Intel oneAPI
-        id: cache-install
-        uses: actions/cache@v4
-        with:
-          path: |
-            /opt/intel/oneapi/
-          key: intel-oneapi-${{ env.LINUX_CPPKIT_URL }}-${{ env.LINUX_FORTRANKIT_URL }}
-      
-      - name: Install Intel Fortran kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
+      - name: Add Intel APT repository
         run: |
-          wget -q $LINUX_FORTRANKIT_URL -O fortran_kit.sh
-          chmod +x fortran_kit.sh
-          sudo ./fortran_kit.sh -a --silent --eula accept
+          curl -sS -L https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
       
-      - name: Install Intel C++ kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
+      - name: Install Intel oneAPI compilers
+        run: sudo apt-get install --no-install-recommends intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
+      
+      - name: Setup Intel oneAPI environment
         run: |
-          wget -q $LINUX_CPPKIT_URL -O cpp_kit.sh
-          chmod +x cpp_kit.sh
-          sudo ./cpp_kit.sh -a --silent --eula accept
+          source /opt/intel/oneapi/2025.0/oneapi-vars.sh
+          printenv >> $GITHUB_ENV
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
@@ -50,7 +38,7 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: |
-            source /opt/intel/oneapi/setvars.sh --force
+            source /opt/intel/oneapi/2025.0/oneapi-vars.sh
           CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
       
       - uses: actions/upload-artifact@v4
@@ -62,27 +50,13 @@ jobs:
     name: Build (Windows, x86_64, Intel ifx)
     runs-on: windows-2022
     
-    env:
-      WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0a91e6dc-9c09-4e0f-9113-1f28bf7e8be2/intel-fortran-essentials-2025.0.1.28_offline.exe
-    
     steps:
       - uses: actions/checkout@v4
       
-      - name: Cache Intel oneAPI
-        id: cache-install
-        uses: actions/cache@v4
+      - name: Setup Intel oneAPI
+        uses: rscohn2/setup-oneapi@main
         with:
-          path: |
-            C:\Program Files (x86)\Intel\oneAPI\compiler
-            C:\Program Files (x86)\Intel\oneAPI\setvars.bat
-          key: intel-oneapi-${{ env.WINDOWS_BASEKIT_URL }}
-      
-      - name: Install Intel Fortran
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          Invoke-WebRequest -Uri $env:WINDOWS_BASEKIT_URL -OutFile intel_fortran.exe
-          Start-Process -FilePath ".\intel_fortran.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          version: 2025.0
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
