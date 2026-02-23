@@ -14,10 +14,14 @@ np_dep = dependency('numpy')
 # Fortran compiler setup
 ff = meson.get_compiler('fortran')
 
-# Legacy flags for gfortran (for fixed-form .f files)
+# Compiler-specific flags
 if ff.get_id() == 'gcc'
+  # Legacy flags for gfortran (for fixed-form .f files)
   add_project_arguments('-std=legacy', language: 'fortran')
   add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
+elif ff.get_id() == 'intel-llvm' or ff.get_id() == 'intel'
+  # Intel ifx/ifort: disable fast-math for correctness
+  add_project_arguments('-fp-model=strict', language: 'fortran')
 endif
 
 # OpenMP

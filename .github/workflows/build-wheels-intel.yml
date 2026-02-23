@@ -1,0 +1,124 @@
+name: Build Wheels (Intel oneAPI)
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux-intel:
+    name: Build (Linux, x86_64, Intel ifx)
+    runs-on: ubuntu-22.04
+    
+    env:
+      LINUX_FORTRANKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9e86b555-f238-4dea-b4b2-01b243e42483/intel-fortran-essentials-2025.0.1.27_offline.sh
+      LINUX_CPPKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache Intel oneAPI
+        id: cache-install
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/intel/oneapi/
+          key: intel-oneapi-${{ env.LINUX_CPPKIT_URL }}-${{ env.LINUX_FORTRANKIT_URL }}
+      
+      - name: Install Intel Fortran kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          wget -q $LINUX_FORTRANKIT_URL -O fortran_kit.sh
+          chmod +x fortran_kit.sh
+          sudo ./fortran_kit.sh -a --silent --eula accept
+      
+      - name: Install Intel C++ kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          wget -q $LINUX_CPPKIT_URL -O cpp_kit.sh
+          chmod +x cpp_kit.sh
+          sudo ./cpp_kit.sh -a --silent --eula accept
+      
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: x86_64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_ALL_LINUX: |
+            source /opt/intel/oneapi/setvars.sh --force
+          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x86_64-intel
+          path: wheelhouse/*.whl
+
+  build-windows-intel:
+    name: Build (Windows, x86_64, Intel ifx)
+    runs-on: windows-2022
+    
+    env:
+      WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0a91e6dc-9c09-4e0f-9113-1f28bf7e8be2/intel-fortran-essentials-2025.0.1.28_offline.exe
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache Intel oneAPI
+        id: cache-install
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\Program Files (x86)\Intel\oneAPI\compiler
+            C:\Program Files (x86)\Intel\oneAPI\setvars.bat
+          key: intel-oneapi-${{ env.WINDOWS_BASEKIT_URL }}
+      
+      - name: Install Intel Fortran
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri $env:WINDOWS_BASEKIT_URL -OutFile intel_fortran.exe
+          Start-Process -FilePath ".\intel_fortran.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+      
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_BUILD_WINDOWS: |
+            call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+            pip install delvewheel
+          CIBW_ENVIRONMENT_WINDOWS: FC=ifx
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-x86_64-intel
+          path: wheelhouse/*.whl
+
+  upload-pypi:
+    name: Upload to PyPI
+    needs: [build-linux-intel, build-windows-intel]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+      
+      - name: List wheels
+        run: ls -la dist/
+      
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
