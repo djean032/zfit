@@ -57,8 +57,7 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress && python -m pip install delvewheel
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\rtools40\ucrt64\bin;C:\Users\runneradmin\AppData\Local\pypa\cibuildwheel\Cache\nuget-cpython\python.3.9.13\x64\test" -w {dest_dir} {wheel}
+          CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress
       
       - uses: actions/upload-artifact@v4
         with:
