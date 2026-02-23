@@ -43,9 +43,9 @@ fortran_sources = files(
 # On Windows, install to package directory for meson-python bundling
 # On Linux, let meson-python handle library location for auditwheel
 if host_machine.system() == 'windows'
-  zfit_lib = shared_library('zfit', fortran_sources,
+  zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
-    install: true,
+    install: false,
   )
 else
   zfit_lib = shared_library('zfit', fortran_sources,
