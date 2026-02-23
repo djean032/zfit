@@ -4,7 +4,6 @@ requires = [
     "cython>=3.0",
     "numpy>=1.20",
     "patchelf; sys_platform == 'linux'",
-    "delvewheel; sys_platform == 'win32'",
 ]
 build-backend = "mesonpy"
 
@@ -32,7 +31,6 @@ manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 
 [tool.cibuildwheel.windows]
-repair-wheel-command = "pip install delvewheel && delvewheel repair -w {dest_dir} {wheel}"
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
