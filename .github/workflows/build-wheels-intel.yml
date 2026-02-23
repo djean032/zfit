@@ -60,9 +60,9 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD_WINDOWS: |
-            call "{env.FC}"
+            call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
             pip install delvewheel
-          CIBW_ENVIRONMENT_WINDOWS: FC=${{ env.FC }}
+          CIBW_ENVIRONMENT_WINDOWS: FC=ifx
       
       - uses: actions/upload-artifact@v4
         with:
