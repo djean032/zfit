@@ -55,9 +55,6 @@ module chem
    public :: rhs_rates, rhs_intensity, jdum, solve_rates, solve_intensity, &
              solve_system, fit_scan
 
-   !$omp threadprivate(cb_data_x, cb_data_y, cb_spec_pars, cb_z_samples, &
-   !$omp                cb_times, cb_initial_population, cb_laser_intensities, &
-   !$omp                cb_frq, cb_num_x_pts, cb_num_datasets, cb_expr, cb_y_work)
    real(c_double), pointer :: cb_data_x(:) => null()
    real(c_double), pointer :: cb_data_y(:) => null()
    real(c_double), pointer :: cb_spec_pars(:) => null()
@@ -70,10 +67,15 @@ module chem
    procedure(expr_f), pointer :: cb_expr => null()
    real(c_double), allocatable :: cb_y_work(:)
 
-   !$omp threadprivate(pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
-   !$omp               pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
+   !$omp threadprivate(cb_data_x, cb_data_y, cb_spec_pars, cb_z_samples, &
+   !$omp                cb_times, cb_initial_population, cb_laser_intensities, &
+   !$omp                cb_frq, cb_num_x_pts, cb_num_datasets, cb_expr, cb_y_work)
+
    real(c_double) :: pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
                      pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8
+
+   !$omp threadprivate(pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
+   !$omp               pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8)
 
 contains
 
