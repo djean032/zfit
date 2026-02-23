@@ -39,29 +39,11 @@ fortran_sources = files(
   'src/opkda2.f',
 )
 
-# Build library based on OS and compiler
-# Windows Intel: static_library with link_whole (required for proper linking with Intel ifx)
-# Windows gfortran / Linux: shared_library with link_with
-ff_id = ff.get_id()
-is_windows_intel = host_machine.system() == 'windows' and ('intel' in ff_id)
-message('Fortran compiler ID: ' + ff_id)
-message('Is Windows Intel: ' + is_windows_intel.to_string())
-
-if is_windows_intel
-  # Windows Intel: static_library
-  zfit_lib = static_library('zfit', fortran_sources,
-    dependencies: omp_dep,
-    install: false,
-  )
-  use_link_whole = true
-else
-  # Windows gfortran / Linux: shared_library
-  zfit_lib = shared_library('zfit', fortran_sources,
-    dependencies: omp_dep,
-    install: true,
-  )
-  use_link_whole = false
-endif
+# Build shared library for all platforms
+zfit_lib = shared_library('zfit', fortran_sources,
+  dependencies: omp_dep,
+  install: true,
+)
 
 # Cython extension
 cython = find_program('cython')
@@ -71,20 +53,12 @@ cython_sources = custom_target('zfit_wrapper_c',
   command: [cython, '-3', '-o', '@OUTPUT@', '@INPUT@'],
 )
 
-# Build extension module with appropriate linking
-if use_link_whole
-  py.extension_module('zfit_wrapper', cython_sources,
-    dependencies: [py_dep, np_dep],
-    link_whole: zfit_lib,
-    install: true,
-  )
-else
-  py.extension_module('zfit_wrapper', cython_sources,
-    dependencies: [py_dep, np_dep],
-    link_with: zfit_lib,
-    install: true,
-  )
-endif
+# Build extension module
+py.extension_module('zfit_wrapper', cython_sources,
+  dependencies: [py_dep, np_dep],
+  link_with: zfit_lib,
+  install: true,
+)
 
 # Install Python files
 py.install_sources(
