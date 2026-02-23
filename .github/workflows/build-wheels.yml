@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux-gcc:
+  build-linux:
     name: Build (Linux, ${{ matrix.arch }}, GCC)
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -21,20 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            gfortran \
-            gcc \
-            g++ \
-            cmake \
-            make \
-            python3-dev \
-            libomp-dev \
-            ninja-build
-      
-      - name: Build wheels with cibuildwheel
+      - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
@@ -42,55 +29,27 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD: pip install cython numpy
-          CIBW_ENVIRONMENT_LINUX: FC=gfortran CC=gcc CXX=g++
+          CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran patchelf
       
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-${{ matrix.arch }}-gcc
+          name: wheels-linux-${{ matrix.arch }}
           path: wheelhouse/*.whl
 
-  build-linux-intel:
-    name: Build (Linux, x86_64, Intel)
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2.21
-        env:
-          CIBW_ARCHS: x86_64
-          CIBW_SKIP: "*-musllinux_* pp*"
-          CIBW_BUILD_FRONTEND: build
-          CIBW_TEST_COMMAND: pytest {package}/test -v
-          CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD: pip install cython numpy
-          CIBW_BEFORE_ALL_LINUX: |
-            yum install -y yum-utils
-            yum-config-manager --add-repo https://yum.repos.intel.com/intel-gpg-keys/intel-oneapi.repo
-            yum install -y intel-oneapi-compiler-fortran intel-oneapi-compiler-dpcpp-cpp
-          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx PATH="/opt/intel/oneapi/compiler/latest/bin:$PATH"
-      
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-linux-x86_64-intel
-          path: wheelhouse/*.whl
-
-  build-windows-intel:
-    name: Build (Windows, x86_64, Intel)
+  build-windows:
+    name: Build (Windows, x86_64, GCC)
     runs-on: windows-latest
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Intel Fortran
-        uses: fortran-lang/setup-fortran@v1
-        with:
-          compiler: intel
-          version: '2025.0'
+      - name: Setup Rtools (MinGW-w64 with gfortran)
+        run: |
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
+        shell: powershell
       
-      - name: Build wheels with cibuildwheel
+      - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
         env:
           CIBW_ARCHS: AMD64
@@ -98,17 +57,15 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD: pip install cython numpy delvewheel
-          CIBW_REPAIR_WHEEL_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
       
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows-x86_64-intel
+          name: wheels-windows-x86_64
           path: wheelhouse/*.whl
 
   upload-pypi:
     name: Upload to PyPI
-    needs: [build-linux-gcc, build-linux-intel, build-windows-intel]
+    needs: [build-linux, build-windows]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
