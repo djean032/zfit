@@ -3,6 +3,8 @@ requires = [
     "meson-python>=0.13.0",
     "cython>=3.0",
     "numpy>=1.20",
+    "patchelf; sys_platform == 'linux'",
+    "delvewheel; sys_platform == 'win32'",
 ]
 build-backend = "mesonpy"
 
@@ -34,3 +36,6 @@ repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.meson-python]
+allow-windows-internal-shared-libs = true
