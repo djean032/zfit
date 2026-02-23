@@ -39,19 +39,23 @@ fortran_sources = files(
   'src/opkda2.f',
 )
 
-# Build shared library
-# On Windows, install to package directory for meson-python bundling
-# On Linux, let meson-python handle library location for auditwheel
-if host_machine.system() == 'windows'
+# Build library based on OS and compiler
+# Windows Intel: static_library with link_whole (required for proper linking)
+# Windows gfortran / Linux: shared_library with link_with
+if host_machine.system() == 'windows' and (ff.get_id() == 'intel-llvm' or ff.get_id() == 'intel')
+  # Windows Intel: static_library
   zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
     install: false,
   )
+  use_link_whole = true
 else
+  # Windows gfortran / Linux: shared_library
   zfit_lib = shared_library('zfit', fortran_sources,
     dependencies: omp_dep,
     install: true,
   )
+  use_link_whole = false
 endif
 
 # Cython extension
@@ -62,9 +66,8 @@ cython_sources = custom_target('zfit_wrapper_c',
   command: [cython, '-3', '-o', '@OUTPUT@', '@INPUT@'],
 )
 
-# Windows: use link_whole with static_library
-# Linux: use link_with with shared_library
-if host_machine.system() == 'windows'
+# Build extension module with appropriate linking
+if use_link_whole
   py.extension_module('zfit_wrapper', cython_sources,
     dependencies: [py_dep, np_dep],
     link_whole: zfit_lib,
