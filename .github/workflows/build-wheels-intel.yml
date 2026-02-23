@@ -14,32 +14,29 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Add Intel APT repository
-        run: |
-          curl -sS -L https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt-get update
-      
-      - name: Install Intel oneAPI compilers
-        run: sudo apt-get install --no-install-recommends intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
-      
-      - name: Setup Intel oneAPI environment
-        run: |
-          source /opt/intel/oneapi/setvars.sh
-          printenv >> $GITHUB_ENV
-      
+       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
         env:
           CIBW_ARCHS: x86_64
           CIBW_SKIP: "*-musllinux_* pp*"
           CIBW_BUILD_FRONTEND: build
+          CIBW_MANYLINUX_IMAGE: ${{ vars.MANYLINUX_IMAGE || 'quay.io/pypa/manylinux_2_28_x86_64' }}
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: |
-            source /opt/intel/oneapi/setvars.sh
-          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
+            # Add Intel APT repository and install compilers in the manylinux container
+            curl -sS -L https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > /etc/apt/sources.list.d/oneAPI.list
+            apt-get update
+            apt-get install -y --no-install-recommends intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
+          CIBW_ENVIRONMENT_LINUX: |
+            FC=ifx
+            CC=icx
+            CXX=icpx
+            PATH: /opt/intel/oneapi/compiler/2025.0/bin:/opt/intel/oneapi/mpi/2021.14/bin:$PATH
+            LD_LIBRARY_PATH: /opt/intel/oneapi/compiler/2025.0/lib:/opt/intel/oneapi/mpi/2021.14/lib:$LD_LIBRARY_PATH
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
       
       - uses: actions/upload-artifact@v4
         with:
@@ -53,12 +50,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Intel oneAPI
-        uses: rscohn2/setup-oneapi@main
-        with:
-          components: |
-            icx
-            ifx
+      - name: Install Intel oneAPI via winget
+        shell: powershell
+        run: |
+          winget install -e --id Intel.oneAPI.2025.0 --accept-package-agreements --accept-source-agreements
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
