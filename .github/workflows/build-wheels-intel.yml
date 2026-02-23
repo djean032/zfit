@@ -39,7 +39,7 @@ jobs:
           path: wheelhouse/*.whl
 
   build-windows-intel:
-    name: Build (Windows, x86_64, Intel ifx)
+    name: Build (Windows, x86_64, Intel ifx + MSVC)
     runs-on: windows-2022
     
     steps:
@@ -59,11 +59,9 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_BUILD_WINDOWS: |
-            call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-            pip install delvewheel
-          CIBW_ENVIRONMENT_WINDOWS: FC=ifx
-      
+          CIBW_BEFORE_BUILD_WINDOWS: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && pip install delvewheel
+          CIBW_ENVIRONMENT_WINDOWS: FC=ifx CC=cl CXX=cl
+    
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-x86_64-intel
