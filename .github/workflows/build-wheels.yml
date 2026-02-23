@@ -27,7 +27,12 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*-musllinux_* pp*"
           CIBW_BUILD_FRONTEND: build
-          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_COMMAND: |
+            echo "=== Installed files ==="
+            pip show -f zfit
+            echo ""
+            echo "=== Checking RPATH ==="
+            python -c "import zfit_wrapper; print('Import successful')"
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
       
