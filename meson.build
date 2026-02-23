@@ -39,19 +39,23 @@ fortran_sources = files(
   'src/opkda2.f',
 )
 
-# Build shared library for all platforms
-# On Windows, install DLL alongside the extension module
+# Build library based on OS
+# Windows: static library with link_whole (no DLL to manage)
+# Linux/macOS: shared library with link_with
 if host_machine.system() == 'windows'
-  zfit_lib = shared_library('zfit', fortran_sources,
+  # Windows: static library - embed all objects into extension
+  zfit_lib = static_library('zfit', fortran_sources,
     dependencies: omp_dep,
-    install: true,
-    install_dir: py.get_install_dir() / '..',
+    install: false,
   )
+  use_link_whole = true
 else
+  # Linux/macOS: shared library
   zfit_lib = shared_library('zfit', fortran_sources,
     dependencies: omp_dep,
     install: true,
   )
+  use_link_whole = false
 endif
 
 # Cython extension
@@ -62,12 +66,20 @@ cython_sources = custom_target('zfit_wrapper_c',
   command: [cython, '-3', '-o', '@OUTPUT@', '@INPUT@'],
 )
 
-# Build extension module
-py.extension_module('zfit_wrapper', cython_sources,
-  dependencies: [py_dep, np_dep],
-  link_with: zfit_lib,
-  install: true,
-)
+# Build extension module with appropriate linking
+if use_link_whole
+  py.extension_module('zfit_wrapper', cython_sources,
+    dependencies: [py_dep, np_dep],
+    link_whole: zfit_lib,
+    install: true,
+  )
+else
+  py.extension_module('zfit_wrapper', cython_sources,
+    dependencies: [py_dep, np_dep],
+    link_with: zfit_lib,
+    install: true,
+  )
+endif
 
 # Install Python files
 py.install_sources(
