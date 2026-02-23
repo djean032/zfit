@@ -56,7 +56,9 @@ jobs:
       - name: Setup Intel oneAPI
         uses: rscohn2/setup-oneapi@main
         with:
-          components: 'intel-oneapi-compilers'
+          components: |
+            icx
+            ifx
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
