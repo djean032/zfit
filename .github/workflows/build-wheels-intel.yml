@@ -26,7 +26,7 @@ jobs:
       
       - name: Setup Intel oneAPI environment
         run: |
-          source /opt/intel/oneapi/2025.0/oneapi-vars.sh
+          source /opt/intel/oneapi/setvars.sh
           printenv >> $GITHUB_ENV
       
       - name: Build wheels with cibuildwheel
@@ -38,7 +38,7 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: |
-            source /opt/intel/oneapi/2025.0/oneapi-vars.sh
+            source /opt/intel/oneapi/setvars.sh
           CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
       
       - uses: actions/upload-artifact@v4
@@ -56,7 +56,7 @@ jobs:
       - name: Setup Intel oneAPI
         uses: rscohn2/setup-oneapi@main
         with:
-          version: 2025.0
+          components: 'intel-oneapi-compilers'
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
