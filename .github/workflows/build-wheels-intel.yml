@@ -15,6 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
        
+      - name: Setup Fortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel
+          version: '2025.0'
+       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
         env:
@@ -24,20 +30,7 @@ jobs:
           CIBW_MANYLINUX_IMAGE: ${{ vars.MANYLINUX_IMAGE || 'quay.io/pypa/manylinux_2_28_x86_64' }}
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
-          CIBW_BEFORE_ALL_LINUX: |
-            # Add Intel YUM repository for CentOS/RHEL/Fedora
-            tee /etc/yum.repos.d/oneAPI.repo << EOF
-            [oneAPI]
-            name=Intel(R) oneAPI repository
-            baseurl=https://yum.repos.intel.com/oneapi
-            enabled=1
-            gpgcheck=1
-            repo_gpgcheck=1
-            gpgkey=https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-            EOF
-            dnf install -y --setopt=install_weak_deps=False intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
-          CIBW_BEFORE_BUILD_LINUX: source /opt/intel/oneapi/setvars.sh
-          CIBW_ENVIRONMENT_LINUX: FC=ifx CC=icx CXX=icpx
+          CIBW_ENVIRONMENT_LINUX: FC=$FC CC=$CC CXX=$CXX
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
       
       - uses: actions/upload-artifact@v4
@@ -51,26 +44,13 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Cache Intel oneAPI
-        id: cache-intel
-        uses: actions/cache@v4
+       
+      - name: Setup Fortran
+        uses: fortran-lang/setup-fortran@v1
         with:
-          path: |
-            C:\Program Files (x86)\Intel
-          key: intel-oneapi-2025.0-windows
-      
-      - name: Install Intel oneAPI
-        if: steps.cache-intel.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          $url = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/36f868e9-84b3-4b4f-90ef-ca84092cae6a/intel-oneapi-hpc-toolkit-2025.3.1.54_offline.exe"
-          Write-Host "Downloading Intel oneAPI from $url"
-          Invoke-WebRequest -Uri $url -OutFile intel_hpckit.exe -UseBasicParsing
-          Write-Host "Installing Intel oneAPI..."
-          Start-Process -FilePath ".\intel_hpckit.exe" -ArgumentList "-s -a --silent --eula accept -p=NEED_VS2019_INTEGRATION=0" -Wait
-          Remove-Item intel_hpckit.exe
-      
+          compiler: intel
+          version: '2025.0'
+       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
         env:
@@ -80,9 +60,9 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD_WINDOWS: |
-            call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+            call "{env.FC}"
             pip install delvewheel
-          CIBW_ENVIRONMENT_WINDOWS: FC=ifx
+          CIBW_ENVIRONMENT_WINDOWS: FC=${{ env.FC }}
       
       - uses: actions/upload-artifact@v4
         with:
