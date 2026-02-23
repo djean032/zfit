@@ -46,7 +46,6 @@ if host_machine.system() == 'windows'
   zfit_lib = shared_library('zfit', fortran_sources,
     dependencies: omp_dep,
     install: true,
-    install_dir: py.get_install_dir(),
   )
 else
   zfit_lib = shared_library('zfit', fortran_sources,
