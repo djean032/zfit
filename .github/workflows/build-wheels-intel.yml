@@ -26,10 +26,12 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: |
             # Add Intel APT repository and install compilers in the manylinux container
-            curl -sS -L https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg
-            echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > /etc/apt/sources.list.d/oneAPI.list
-            apt-get update
-            apt-get install -y --no-install-recommends intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
+            # manylinux_2_28 is Fedora-based, use dnf
+            dnf install -y dnf-plugins-core gnupg
+            # Add Intel GPG key and repo (works on RHEL/CentOS/Fedora)
+            rpm --import https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+            dnf config-manager --add-repo https://apt.repos.intel.com/oneapi.repo
+            dnf install -y --setopt=install_weak_deps=False intel-oneapi-compiler-fortran-2025.0 intel-oneapi-compiler-dpcpp-cpp-2025.0
           CIBW_ENVIRONMENT_LINUX: |
             FC=ifx
             CC=icx
@@ -50,10 +52,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Intel oneAPI via winget
+      - name: Install Intel oneAPI
         shell: powershell
         run: |
-          winget install -e --id Intel.oneAPI.2025.0 --accept-package-agreements --accept-source-agreements
+          $url = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d61d48a-4fe8-4cb2-bd9d-94d2c19c6227/intel-oneapi-compiler-2025.3.0.563_offline.exe"
+          Invoke-WebRequest -Uri $url -OutFile intel_oneapi.exe
+          Start-Process -FilePath ".\intel_oneapi.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
