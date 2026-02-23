@@ -19,6 +19,10 @@ if ff.get_id() == 'gcc'
   # Legacy flags for gfortran (for fixed-form .f files)
   add_project_arguments('-std=legacy', language: 'fortran')
   add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
+  # Windows gfortran needs quadmath library for static linking
+  if host_machine.system() == 'windows'
+    add_project_link_arguments('-lquadmath', language: 'fortran')
+  endif
 elif ff.get_id() == 'intel-llvm' or ff.get_id() == 'intel'
   # Intel ifx/ifort: disable fast-math for correctness
   add_project_arguments('-fp-model=strict', language: 'fortran')
