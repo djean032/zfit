@@ -12,7 +12,7 @@ name = "zfit"
 version = "0.1.0"
 description = "Z-scan fitting library for nonlinear optics"
 authors = [{name = "Your Name"}]
-license = {text = "MIT"}
+license = {text = "BSD-3-Clause"}
 requires-python = ">=3.9"
 dependencies = ["numpy>=1.20"]
 
