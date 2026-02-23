@@ -57,12 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Intel oneAPI
-        uses: rscohn2/setup-oneapi@v0
+      - name: Install Intel Fortran
+        uses: fortran-lang/setup-fortran@v1
         with:
-          components: |
-            ifx
-            icx
+          compiler: intel
+          version: '2025.0'
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
@@ -87,10 +86,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Intel oneAPI
-        uses: rscohn2/setup-oneapi@v0
+      - name: Install Intel Fortran
+        uses: fortran-lang/setup-fortran@v1
         with:
-          components: ifx
+          compiler: intel
+          version: '2025.0'
       
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
