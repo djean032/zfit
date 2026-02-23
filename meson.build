@@ -42,9 +42,8 @@ fortran_sources = files(
 # Build library based on OS and compiler
 # Windows Intel: static_library with link_whole (required for proper linking with Intel ifx)
 # Windows gfortran / Linux: shared_library with link_with
-import os
-env_cc = os.environ.get('CC', '')
-is_intel_on_windows = host_machine.system() == 'windows' and (env_cc == 'cl' or env_cc == 'icx')
+ff_id = ff.get_id()
+is_intel_on_windows = host_machine.system() == 'windows' and (ff_id == 'intel-llvm' or ff_id == 'intel')
 
 if is_intel_on_windows
   # Windows Intel: static_library
