@@ -36,10 +36,20 @@ fortran_sources = files(
 )
 
 # Build shared library
-zfit_lib = shared_library('zfit', fortran_sources,
-  dependencies: omp_dep,
-  install: true,
-)
+# On Windows, install to package directory for meson-python bundling
+# On Linux, let meson-python handle library location for auditwheel
+if host_machine.system() == 'windows'
+  zfit_lib = shared_library('zfit', fortran_sources,
+    dependencies: omp_dep,
+    install: true,
+    install_dir: py.get_install_dir(),
+  )
+else
+  zfit_lib = shared_library('zfit', fortran_sources,
+    dependencies: omp_dep,
+    install: true,
+  )
+endif
 
 # Cython extension
 cython = find_program('cython')
