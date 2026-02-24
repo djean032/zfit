@@ -1,5 +1,5 @@
 project('zfit', 'c', 'fortran', 'cython',
-  version: '0.1.0',
+  version: '0.1.2',
   meson_version: '>=1.1.0',
   default_options: [
     'buildtype=release',
@@ -20,8 +20,7 @@ if ff.get_id() == 'gcc'
   add_project_arguments('-std=legacy', language: 'fortran')
   add_project_arguments('-fallow-argument-mismatch', language: 'fortran')
 elif ff.get_id() == 'intel-llvm' or ff.get_id() == 'intel'
-  # Intel ifx/ifort: disable fast-math for correctness
-  add_project_arguments('-fp-model=strict', language: 'fortran')
+  # Intel ifx/ifort: no special flags (matching scipy approach)
 endif
 
 # OpenMP
