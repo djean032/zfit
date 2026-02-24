@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  # =====================
+  # GFORTRAN BUILDS
+  # =====================
+  build-gfortran-linux:
+    name: Build (Linux, x86_64, GCC)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: x86_64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-gfortran-linux
+          path: wheelhouse/*.whl
+
+  build-gfortran-windows:
+    name: Build (Windows, x86_64, GCC)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rtools (MinGW-w64 with gfortran)
+        run: |
+          choco install rtools -y --no-progress --force --version=4.0.0.20220125
+          echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
+        shell: powershell
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress && pip install delvewheel
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\rtools40\ucrt64\bin" -w {dest_dir} {wheel}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-gfortran-windows
+          path: wheelhouse/*.whl
+
+  # =====================
+  # INTEL BUILDS
+  # =====================
+  build-intel-linux:
+    name: Build (Linux, x86_64, Intel ifx)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Fortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel
+          version: '2025.0'
+
+      - name: Setup Intel pyproject
+        run: cp pyproject-intel.toml pyproject.toml
+
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: x86_64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_MANYLINUX_IMAGE: ${{ vars.MANYLINUX_IMAGE || 'quay.io/pypa/manylinux_2_28_x86_64' }}
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_ENVIRONMENT_LINUX: FC=$FC CC=$CC CXX=$CXX
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-intel-linux
+          path: wheelhouse/*.whl
+
+  build-intel-windows:
+    name: Build (Windows, x86_64, Intel ifx + MSVC)
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Fortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel
+          version: '2025.0'
+
+      - name: Setup Intel pyproject
+        run: cp pyproject-intel.toml pyproject.toml
+
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_BUILD_WINDOWS: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && pip install delvewheel
+          CIBW_ENVIRONMENT_WINDOWS: FC=ifx CC=cl CXX=cl
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin" -w {dest_dir} {wheel}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-intel-windows
+          path: wheelhouse/*.whl
+
+  # =====================
+  # PUBLISH
+  # =====================
+  publish:
+    name: Publish to PyPI
+    needs: [build-gfortran-linux, build-gfortran-windows, build-intel-linux, build-intel-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish zscan-fit (gfortran)
+        run: |
+          ls dist/
+          twine upload dist/*gfortran*.whl
+
+      - name: Publish zscan-fit-intel (Intel)
+        run: |
+          twine upload dist/*intel*.whl
