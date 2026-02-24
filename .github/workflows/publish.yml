@@ -1,8 +1,7 @@
 name: Publish to PyPI
 
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
 
 jobs:
   upload-pypi:
@@ -19,16 +18,8 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
 
-      - name: Check for wheels
-        id: check-wheels
-        run: |
-          count=$(find dist -name "*.whl" | wc -l)
-          echo "wheel_count=$count" >> $GITHUB_OUTPUT
-          if [ "$count" -eq 0 ]; then
-            echo "No wheels found, skipping publish"
-            exit 1
-          fi
-          echo "Found $count wheels"
+      - name: List wheels
+        run: find dist -name "*.whl"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
