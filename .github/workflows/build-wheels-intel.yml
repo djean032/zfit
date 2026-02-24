@@ -32,10 +32,10 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_ENVIRONMENT_LINUX: FC=$FC CC=$CC CXX=$CXX
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
-      
+       
       - uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
+          name: wheels-intel-linux
           path: wheelhouse/*.whl
 
   build-windows-intel:
@@ -62,8 +62,8 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && pip install delvewheel
           CIBW_ENVIRONMENT_WINDOWS: FC=ifx CC=cl CXX=cl
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin" -w {dest_dir} {wheel}
-    
+     
       - uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
+          name: wheels-intel-windows
           path: wheelhouse/*.whl
