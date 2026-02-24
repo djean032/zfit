@@ -1,12 +1,12 @@
 name: Build Wheels
-
+ 
 on:
   push:
     branches: [main, master]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
-
+ 
 jobs:
   build-linux:
     name: Build (Linux, ${{ matrix.arch }}, GCC)
@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
+       
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
         env:
@@ -30,12 +30,12 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
-      
+       
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.arch }}
           path: wheelhouse/*.whl
-
+ 
   build-windows:
     name: Build (Windows, x86_64, GCC)
     runs-on: windows-latest
@@ -59,8 +59,26 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress && pip install delvewheel
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\rtools40\ucrt64\bin" -w {dest_dir} {wheel}
-      
+       
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-x86_64
           path: wheelhouse/*.whl
+ 
+  upload-pypi:
+    name: Upload to PyPI
+    needs: [build-linux, build-windows]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: wheels-*
+          merge-multiple: true
+      
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
