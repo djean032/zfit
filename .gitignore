@@ -41,3 +41,6 @@ _cmake_test*
 # Data files
 data/
 build_cmake
+build_fortran
+build_fortran
+test/3-Br-pbt_532 nm_50 nJ.pzy

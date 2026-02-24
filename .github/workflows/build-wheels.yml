@@ -1,0 +1,66 @@
+name: Build Wheels
+ 
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+ 
+jobs:
+  build-linux:
+    name: Build (Linux, ${{ matrix.arch }}, GCC)
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, runner: ubuntu-latest }
+          - { arch: aarch64, runner: ubuntu-24.04-arm }
+    
+    steps:
+      - uses: actions/checkout@v4
+       
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
+       
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-gfortran-linux-${{ matrix.arch }}
+          path: wheelhouse/*.whl
+ 
+  build-windows:
+    name: Build (Windows, x86_64, GCC)
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rtools (MinGW-w64 with gfortran)
+        run: |
+          choco install rtools -y --no-progress --force --version=4.0.0.20220125
+          echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
+        shell: powershell
+      
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: pytest {package}/test -v
+          CIBW_TEST_REQUIRES: pytest scipy
+          CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress && pip install delvewheel
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\rtools40\ucrt64\bin" -w {dest_dir} {wheel}
+       
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-gfortran-windows
+          path: wheelhouse/*.whl
