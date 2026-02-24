@@ -147,9 +147,11 @@ jobs:
 
       - name: Publish zscan-fit (gfortran)
         run: |
+          pip install twine
           ls dist/
-          twine upload dist/*gfortran*.whl
+          twine upload dist/zscan_fit-0.1.0-cp*.whl
 
       - name: Publish zscan-fit-intel (Intel)
         run: |
-          twine upload dist/*intel*.whl
+          pip install twine
+          twine upload dist/zscan_fit_intel-0.1.0-cp*.whl
