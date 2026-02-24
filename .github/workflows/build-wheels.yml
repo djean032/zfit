@@ -45,7 +45,7 @@ jobs:
       
       - name: Setup Rtools (MinGW-w64 with gfortran)
         run: |
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          choco install rtools -y --no-progress --force --version=4.0.0.20220125
           echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
         shell: powershell
       
