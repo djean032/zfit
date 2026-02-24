@@ -1,8 +1,9 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [Build Wheels, Build Wheels (Intel oneAPI)]
+    types: [completed]
 
 jobs:
   publish-zscan-fit:
