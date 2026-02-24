@@ -1,15 +1,12 @@
 name: Publish to PyPI
 
 on:
-  workflow_run:
-    workflows: [Build Wheels, Build Wheels (Intel oneAPI)]
-    types: [completed]
-    branches: [master]
+  push:
+    tags: ['v*']
 
 jobs:
   upload-pypi:
     name: Upload to PyPI
-    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -22,15 +19,16 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
 
-      - name: Check for tag marker
-        id: check-tag
+      - name: Check for wheels
+        id: check-wheels
         run: |
-          if [ -d "dist/is-tag-push" ]; then
-            echo "tag_push=true" >> $GITHUB_OUTPUT
-          else
-            echo "tag_push=false" >> $GITHUB_OUTPUT
+          count=$(find dist -name "*.whl" | wc -l)
+          echo "wheel_count=$count" >> $GITHUB_OUTPUT
+          if [ "$count" -eq 0 ]; then
+            echo "No wheels found, skipping publish"
+            exit 1
           fi
+          echo "Found $count wheels"
 
       - name: Publish to PyPI
-        if: steps.check-tag.outputs.tag_push == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
