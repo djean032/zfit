@@ -8,7 +8,7 @@ on:
 jobs:
   publish-zscan-fit:
     name: Publish zscan-fit (gfortran)
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event.workflow_run.head_branch == null
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -38,7 +38,7 @@ jobs:
   publish-zscan-fit-intel:
     name: Publish zscan-fit-intel (Intel)
     needs: publish-zscan-fit
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event.workflow_run.head_branch == null
     runs-on: ubuntu-latest
     permissions:
       id-token: write
