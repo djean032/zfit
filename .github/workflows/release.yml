@@ -161,6 +161,10 @@ jobs:
       id-token: write
 
     steps:
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Download all wheels
         uses: actions/download-artifact@v6
         with:
@@ -171,9 +175,9 @@ jobs:
         run: |
           pip install twine
           ls dist/
-          twine upload dist/zscan_fit-0.1.0-cp*.whl
+          twine upload dist/zscan_fit-${{ steps.version.outputs.VERSION }}-cp*.whl
 
       - name: Publish zscan-fit-intel (Intel)
         run: |
           pip install twine
-          twine upload dist/zscan_fit_intel-0.1.0-cp*.whl
+          twine upload dist/zscan_fit_intel-${{ steps.version.outputs.VERSION }}-cp*.whl
