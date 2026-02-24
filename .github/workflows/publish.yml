@@ -1,17 +1,12 @@
 name: Publish to PyPI
 
 on:
-  workflow_run:
-    workflows: [Build Wheels, Build Wheels (Intel oneAPI)]
-    types: [completed]
-    branches: [master]
   push:
     tags: ['v*']
 
 jobs:
   upload-pypi:
     name: Upload to PyPI
-    if: github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
