@@ -1,14 +1,12 @@
 name: Publish to PyPI
 
 on:
-  workflow_run:
-    workflows: [Build Wheels, Build Wheels (Intel oneAPI)]
-    types: [completed]
+  release:
+    types: [published]
 
 jobs:
   publish-zscan-fit:
     name: Publish zscan-fit (gfortran)
-    if: github.event.workflow_run.head_branch == null
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -17,20 +15,9 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v6
         with:
-          name: wheels-zscan-fit-linux-x86_64
           path: dist
-
-      - name: Download aarch64 wheels
-        uses: actions/download-artifact@v6
-        with:
-          name: wheels-zscan-fit-linux-aarch64
-          path: dist
-
-      - name: Download windows wheels
-        uses: actions/download-artifact@v6
-        with:
-          name: wheels-zscan-fit-windows
-          path: dist
+          pattern: wheels-zscan-fit-*
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -38,23 +25,17 @@ jobs:
   publish-zscan-fit-intel:
     name: Publish zscan-fit-intel (Intel)
     needs: publish-zscan-fit
-    if: github.event.workflow_run.head_branch == null
     runs-on: ubuntu-latest
     permissions:
       id-token: write
 
     steps:
-      - name: Download linux wheels
+      - name: Download wheels
         uses: actions/download-artifact@v6
         with:
-          name: wheels-zscan-fit-intel-linux
           path: dist
-
-      - name: Download windows wheels
-        uses: actions/download-artifact@v6
-        with:
-          name: wheels-zscan-fit-intel-windows
-          path: dist
+          pattern: wheels-zscan-fit-intel-*
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
