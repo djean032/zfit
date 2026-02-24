@@ -1,6 +1,10 @@
 name: Publish to PyPI
 
 on:
+  workflow_run:
+    workflows: [Build Wheels, Build Wheels (Intel oneAPI)]
+    types: [completed]
+    branches: [master]
   push:
     tags: ['v*']
 
