@@ -30,10 +30,11 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
-       
+          CIBW_CONFIG_SETTINGS: --config-settings metadata.name=zscan-fit
+
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-gfortran-linux-${{ matrix.arch }}
+          name: wheels-zscan-fit-linux-${{ matrix.arch }}
           path: wheelhouse/*.whl
  
   build-windows:
@@ -59,8 +60,9 @@ jobs:
           CIBW_TEST_REQUIRES: pytest scipy
           CIBW_BEFORE_BUILD_WINDOWS: choco install rtools -y --no-progress && pip install delvewheel
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: python -m delvewheel repair --add-path "C:\rtools40\ucrt64\bin" -w {dest_dir} {wheel}
-       
+          CIBW_CONFIG_SETTINGS: --config-settings metadata.name=zscan-fit
+
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-gfortran-windows
+          name: wheels-zscan-fit-windows
           path: wheelhouse/*.whl
