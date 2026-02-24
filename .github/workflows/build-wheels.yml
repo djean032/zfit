@@ -64,3 +64,14 @@ jobs:
         with:
           name: wheels-windows-x86_64
           path: wheelhouse/*.whl
+
+  tag-check:
+    name: Tag Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - run: echo "Tag push detected"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: is-tag-push
+          path: .
