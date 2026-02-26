@@ -26,8 +26,7 @@ contains
       data_y = y_data(1:num_x_pts*num_datasets)
       data_pop = populations(1:n_populations)
 
-      !wid = tau / (2 * (log(2.0_c_double))**0.5)
-      wid = tau
+      wid = tau / (2 * (log(2.0_c_double))**0.5)
       zr = (pi*w0**2)/(M2*wavelength)
       frq = c/wavelength
 
