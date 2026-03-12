@@ -22,11 +22,14 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
               double[::1] populations not None, int t_slices, int z_slices,
               double sample_width, double tau, double wavelength, double w0, double M2,
               double[::1] pulse_energy not None, double[::1] spec_pars not None,
-              int num_x_pts, int num_datasets, int n_starts=3):
+              int num_x_pts, int num_datasets, bint is_sa=False, int n_starts=3):
     """
     Fit z-scan data with multi-start parallel optimization.
     
     Parameters:
+        is_sa: Whether sample is saturable absorber (SA) vs reverse saturable absorber (RSA).
+               SA centers around max of y_data, RSA centers around min of y_data.
+               Default False (RSA).
         n_starts: Number of starting points (default=3)
                   Starting values: spec_pars[2] * [0.7, 1.0, 1.3, ...]
     
@@ -38,6 +41,16 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
     
     n_pop = populations.shape[0]
     n_res = y_data.shape[0]
+    
+    # Center x_data around the SA/RSA peak position
+    # For SA: center around the maximum (minimum transmission)
+    # For RSA: center around the minimum (maximum transmission)
+    cdef double center_x
+    if is_sa:
+        center_x = x_data[np.argmax(y_data)]
+    else:
+        center_x = x_data[np.argmin(y_data)]
+    cdef double[::1] centered_x = np.asarray(x_data) - center_x
     
     # Pre-allocate per-start results
     cdef double[:, ::1] all_spec_pars = np.tile(np.asarray(spec_pars), (n_starts, 1))
@@ -59,7 +72,7 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
     with nogil:
         for i in prange(n_starts):
             fit_zscan_data(
-                &x_data[0], &y_data[0], &populations[0],
+                &centered_x[0], &y_data[0], &populations[0],
                 &all_residuals[i, 0], &all_errors[i],
                 &t_slices, &z_slices,
                 &sample_width, &tau,

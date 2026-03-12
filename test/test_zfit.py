@@ -264,6 +264,7 @@ def test_fit_zscan_basic(sample_data):
         spec_pars=spec_pars,
         num_x_pts=len(x_data),
         num_datasets=1,
+        is_sa=False,
         n_starts=3,
     )
 
@@ -302,6 +303,7 @@ def test_fit_zscan_multi_start(sample_data):
         spec_pars=spec_pars.copy(),
         num_x_pts=len(x_data),
         num_datasets=1,
+        is_sa=False,
         n_starts=1,
     )
 
@@ -321,6 +323,7 @@ def test_fit_zscan_multi_start(sample_data):
         spec_pars=spec_pars.copy(),
         num_x_pts=len(x_data),
         num_datasets=1,
+        is_sa=False,
         n_starts=3,
     )
 
@@ -353,6 +356,7 @@ def test_k3_in_expected_range(sample_data):
         spec_pars=spec_pars,
         num_x_pts=len(x_data),
         num_datasets=1,
+        is_sa=False,
         n_starts=5,
     )
 

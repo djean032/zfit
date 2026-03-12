@@ -16,6 +16,7 @@ def fit_zscan(
     spec_pars: NDArray[np.float64],
     num_x_pts: int,
     num_datasets: int,
+    is_sa: bool = False,
     n_starts: int = 3,
 ) -> tuple[NDArray[np.float64], float, NDArray[np.float64]]:
     """
@@ -55,6 +56,11 @@ def fit_zscan(
         Number of x-points per dataset.
     num_datasets : int
         Number of datasets (for multi-pulse-energy fitting).
+    is_sa : bool, optional
+        Whether the sample is a saturable absorber (SA) vs reverse saturable absorber (RSA).
+        For SA, centers around the maximum of y_data (minimum transmission).
+        For RSA, centers around the minimum of y_data (maximum transmission).
+        Default is False (RSA).
     n_starts : int, optional
         Number of parallel optimization starts (default=3).
         Higher values give better global minimum finding but slower.
