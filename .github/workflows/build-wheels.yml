@@ -61,7 +61,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $cacheDir
           $virtualenvPath = "$cacheDir\virtualenv-20.26.6.pyz"
           if (-not (Test-Path $virtualenvPath)) {
-            curl -L -o $virtualenvPath "https://github.com/pypa/get-virtualenv/blob/20.26.6/public/virtualenv.pyz?raw=true"
+            Invoke-WebRequest -Uri "https://github.com/pypa/get-virtualenv/blob/20.26.6/public/virtualenv.pyz?raw=true" -OutFile $virtualenvPath -MaximumRedirection 10
           }
         shell: powershell
       
