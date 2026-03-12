@@ -31,12 +31,6 @@ contains
       zr = (pi*w0**2)/(M2*wavelength)
       frq = c/wavelength
 
-      do idx = 1, num_datasets
-         bidx = (idx - 1)*num_x_pts + 1
-         eidx = idx*num_x_pts
-         loc = minloc(data_y(bidx:eidx))
-         data_x(bidx:eidx) = data_x(bidx:eidx) - data_x(bidx + loc(1) - 1)
-      end do
 
       z = linspace(0.0_c_double, sample_width, z_slices)
       t = linspace(-tau/2.0_c_double, tau/2.0_c_double, t_slices)
