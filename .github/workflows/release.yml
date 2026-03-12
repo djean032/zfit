@@ -65,6 +65,22 @@ jobs:
           echo "C:\rtools40\ucrt64\bin" >> $env:GITHUB_PATH
         shell: powershell
 
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/pypa/cibuildwheel/Cache
+          key: virtualenv-20.30.0
+      
+      - name: Pre-download virtualenv
+        run: |
+          $cacheDir = "$env:LOCALAPPDATA\pypa\cibuildwheel\Cache"
+          New-Item -ItemType Directory -Force -Path $cacheDir
+          $virtualenvPath = "$cacheDir\virtualenv-20.30.0.pyz"
+          if (-not (Test-Path $virtualenvPath)) {
+            Invoke-WebRequest -Uri "https://github.com/pypa/get-virtualenv/blob/20.30.0/public/virtualenv.pyz?raw=true" -OutFile $virtualenvPath -MaximumRedirection 10
+          }
+        shell: powershell
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
         env:
@@ -132,6 +148,22 @@ jobs:
 
       - name: Setup Intel pyproject
         run: cp pyproject-intel.toml pyproject.toml
+
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/pypa/cibuildwheel/Cache
+          key: virtualenv-20.30.0
+      
+      - name: Pre-download virtualenv
+        run: |
+          $cacheDir = "$env:LOCALAPPDATA\pypa\cibuildwheel\Cache"
+          New-Item -ItemType Directory -Force -Path $cacheDir
+          $virtualenvPath = "$cacheDir\virtualenv-20.30.0.pyz"
+          if (-not (Test-Path $virtualenvPath)) {
+            Invoke-WebRequest -Uri "https://github.com/pypa/get-virtualenv/blob/20.30.0/public/virtualenv.pyz?raw=true" -OutFile $virtualenvPath -MaximumRedirection 10
+          }
+        shell: powershell
 
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.21
