@@ -152,6 +152,8 @@ contains
                         tout, y(size(z_positions)), zout
       real(c_double) :: rwork(102)
       integer(c_int) :: iwork(25)
+      integer :: wing_pts
+      real(c_double) :: wing_avg
 
       pre_inv_hfrq = 1.0_c_double/(h*frq)
       pre_k1 = spec_pars(1)
@@ -185,7 +187,11 @@ contains
       y = sum(final_intensities, dim=2)
       intensity_0 = sum(laser_intensities, dim=2)
       normalized_intensities = y/intensity_0
-      y = y/intensity_0 + (1.0_c_double - maxval(normalized_intensities))
+
+      wing_pts = 5
+      wing_avg = (sum(normalized_intensities(1:wing_pts)) + &
+                  sum(normalized_intensities(size(normalized_intensities) - wing_pts + 1:)))/(2.0_c_double*wing_pts)
+      y = y/intensity_0 + (1.0_c_double - wing_avg)
    end function solve_system
 
    subroutine fit_scan(data_x, data_y, expr, z_samples, &
