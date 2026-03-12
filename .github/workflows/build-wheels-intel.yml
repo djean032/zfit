@@ -25,7 +25,7 @@ jobs:
         run: cp pyproject-intel.toml pyproject.toml
 
       - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2.21
+        uses: pypa/cibuildwheel@v2.23
         env:
           CIBW_ARCHS: x86_64
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -57,8 +57,24 @@ jobs:
       - name: Setup Intel pyproject
         run: cp pyproject-intel.toml pyproject.toml
 
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/pypa/cibuildwheel/Cache
+          key: virtualenv-20.26.6
+
+      - name: Pre-download virtualenv
+        run: |
+          $cacheDir = "$env:LOCALAPPDATA\pypa\cibuildwheel\Cache"
+          New-Item -ItemType Directory -Force -Path $cacheDir
+          $virtualenvPath = "$cacheDir\virtualenv-20.26.6.pyz"
+          if (-not (Test-Path $virtualenvPath)) {
+            curl -L -o $virtualenvPath "https://github.com/pypa/get-virtualenv/blob/20.26.6/public/virtualenv.pyz?raw=true"
+          }
+        shell: powershell
+
       - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2.21
+        uses: pypa/cibuildwheel@v2.23
         env:
           CIBW_ARCHS: AMD64
           CIBW_SKIP: "*-musllinux_* pp*"
