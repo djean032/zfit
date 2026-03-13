@@ -14,6 +14,7 @@ cdef extern void fit_zscan_data(
     double* sample_width, double* tau,
     double* wavelength, double* w0, double* M2,
     double* pulse_energy, double* spec_pars,
+    int* fit_indices, int* n_fit,
     int* num_x_pts, int* num_datasets,
     int* n_populations, int* n_residuals
 ) noexcept nogil
@@ -22,25 +23,37 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
               double[::1] populations not None, int t_slices, int z_slices,
               double sample_width, double tau, double wavelength, double w0, double M2,
               double[::1] pulse_energy not None, double[::1] spec_pars not None,
-              int num_x_pts, int num_datasets, bint is_sa=False, int n_starts=3):
+              int[::1] fit_indices not None, int num_x_pts, int num_datasets,
+              bint is_sa=False, int n_starts=3):
     """
     Fit z-scan data with multi-start parallel optimization.
     
     Parameters:
+        fit_indices: 0-indexed array of spec_pars indices to fit (e.g., [0, 2, 5] for pars 0, 2, 5).
+                     Valid range: 0-7 (will be converted to 1-indexed Fortran indices).
         is_sa: Whether sample is saturable absorber (SA) vs reverse saturable absorber (RSA).
                SA centers around max of y_data, RSA centers around min of y_data.
                Default False (RSA).
         n_starts: Number of starting points (default=3)
-                  Starting values: spec_pars[2] * [0.7, 1.0, 1.3, ...]
+                  Starting values: spec_pars[fit_indices] * [0.7, 1.0, 1.3, ...]
     
     Returns:
         residuals, error, spec_pars (best result)
     """
-    cdef int i, best_idx, n_pop, n_res
+    cdef int i, j, best_idx, n_pop, n_res, n_fit
     cdef double best_error
     
     n_pop = populations.shape[0]
     n_res = y_data.shape[0]
+    n_fit = fit_indices.shape[0]
+    
+    # Validate fit_indices are in range 0-7
+    for i in range(n_fit):
+        if fit_indices[i] < 0 or fit_indices[i] > 7:
+            raise ValueError("fit_indices[%d]=%d out of range [0,7]" % (i, fit_indices[i]))
+    
+    # Convert 0-indexed Python indices to 1-indexed Fortran indices
+    cdef int[::1] fortran_indices = np.asarray(fit_indices) + 1
     
     # Center x_data around the SA/RSA peak position
     # For SA: center around the maximum (minimum transmission)
@@ -66,7 +79,8 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
         dtype=np.float64
     )
     for i in range(n_starts):
-        all_spec_pars[i, 2] = spec_pars[2] * start_multipliers[i]
+        for j in range(n_fit):
+            all_spec_pars[i, fit_indices[j]] = spec_pars[fit_indices[j]] * start_multipliers[i]
     
     # Parallel optimization - OpenMP manages thread count
     with nogil:
@@ -78,6 +92,7 @@ def fit_zscan(double[::1] x_data not None, double[::1] y_data not None,
                 &sample_width, &tau,
                 &wavelength, &w0, &M2,
                 &pulse_energy[0], &all_spec_pars[i, 0],
+                &fortran_indices[0], &n_fit,
                 &num_x_pts, &num_datasets,
                 &n_pop, &n_res
             )

@@ -262,6 +262,7 @@ def test_fit_zscan_basic(sample_data):
         M2=1.2,
         pulse_energy=pulse_energy,
         spec_pars=spec_pars,
+        fit_indices=np.array([2], dtype=np.int32),
         num_x_pts=len(x_data),
         num_datasets=1,
         is_sa=False,
@@ -301,6 +302,7 @@ def test_fit_zscan_multi_start(sample_data):
         M2=1.2,
         pulse_energy=pulse_energy,
         spec_pars=spec_pars.copy(),
+        fit_indices=np.array([2], dtype=np.int32),
         num_x_pts=len(x_data),
         num_datasets=1,
         is_sa=False,
@@ -321,6 +323,7 @@ def test_fit_zscan_multi_start(sample_data):
         M2=1.2,
         pulse_energy=pulse_energy,
         spec_pars=spec_pars.copy(),
+        fit_indices=np.array([2], dtype=np.int32),
         num_x_pts=len(x_data),
         num_datasets=1,
         is_sa=False,
@@ -354,6 +357,7 @@ def test_k3_in_expected_range(sample_data):
         M2=1.2,
         pulse_energy=pulse_energy,
         spec_pars=spec_pars,
+        fit_indices=np.array([2], dtype=np.int32),
         num_x_pts=len(x_data),
         num_datasets=1,
         is_sa=False,
@@ -367,3 +371,91 @@ def test_k3_in_expected_range(sample_data):
     print(f"Result: {result}")
     print(f"k3 = {k3:.2e}")
     assert 1e-18 <= k3 <= 1e-16, f"k3 = {k3} is outside expected range [1e-18, 1e-16]"
+
+
+def test_fit_zscan_multi_parameter(sample_data):
+    """Test fitting multiple parameters simultaneously."""
+    x_data, y_data, populations, pulse_energy, spec_pars = sample_data
+
+    # Fit k1 (index 0), k3 (index 2), and tau6 (index 5) simultaneously
+    residuals, error, result = zfit_wrapper.fit_zscan(
+        x_data,
+        y_data,
+        populations,
+        t_slices=11,
+        z_slices=11,
+        sample_width=0.1,
+        tau=9e-9,
+        wavelength=532e-9,
+        w0=14.5e-6,
+        M2=1.2,
+        pulse_energy=pulse_energy,
+        spec_pars=spec_pars.copy(),
+        fit_indices=np.array([0, 2, 5], dtype=np.int32),
+        num_x_pts=len(x_data),
+        num_datasets=1,
+        is_sa=False,
+        n_starts=3,
+    )
+
+    # Check output shapes and types
+    assert isinstance(residuals, np.ndarray)
+    assert residuals.shape == y_data.shape
+    assert isinstance(error, float)
+    assert isinstance(result, np.ndarray)
+    assert result.shape == (8,)
+
+    print(f"\n--- Multi-parameter fit ---")
+    print(f"Error: {error:.6e}")
+    print(f"Result: {result}")
+    print(f"Fitted k1: {result[0]:.2e}")
+    print(f"Fitted k3: {result[2]:.2e}")
+    print(f"Fitted tau6: {result[5]:.2e}")
+
+    # Check that error is reasonable
+    assert error < 0.1, f"Error {error} is too large for multi-parameter fit"
+
+
+def test_fit_indices_validation(sample_data):
+    """Test that invalid fit_indices raises ValueError."""
+    x_data, y_data, populations, pulse_energy, spec_pars = sample_data
+
+    # Test negative index
+    with pytest.raises(ValueError):
+        zfit_wrapper.fit_zscan(
+            x_data,
+            y_data,
+            populations,
+            t_slices=11,
+            z_slices=11,
+            sample_width=0.1,
+            tau=9e-9,
+            wavelength=532e-9,
+            w0=14.5e-6,
+            M2=1.2,
+            pulse_energy=pulse_energy,
+            spec_pars=spec_pars,
+            fit_indices=np.array([-1], dtype=np.int32),
+            num_x_pts=len(x_data),
+            num_datasets=1,
+        )
+
+    # Test index > 7
+    with pytest.raises(ValueError):
+        zfit_wrapper.fit_zscan(
+            x_data,
+            y_data,
+            populations,
+            t_slices=11,
+            z_slices=11,
+            sample_width=0.1,
+            tau=9e-9,
+            wavelength=532e-9,
+            w0=14.5e-6,
+            M2=1.2,
+            pulse_energy=pulse_energy,
+            spec_pars=spec_pars,
+            fit_indices=np.array([8], dtype=np.int32),
+            num_x_pts=len(x_data),
+            num_datasets=1,
+        )
