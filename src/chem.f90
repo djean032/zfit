@@ -201,8 +201,10 @@ contains
       end if
    end function solve_system
 
-    subroutine fit_scan(data_x, data_y, expr, z_samples, &
-                        times, initial_population, laser_intensities, fvec, frq, spec_pars, num_x_pts, num_datasets, fit_indices, n_fit)
+     subroutine fit_scan(data_x, data_y, expr, z_samples, &
+                         times, initial_population, laser_intensities, fvec, &
+                         frq, spec_pars, num_x_pts, num_datasets, &
+                         fit_indices, n_fit)
        integer(c_int), intent(in) :: num_datasets, num_x_pts, n_fit
        integer(c_int), intent(in) :: fit_indices(n_fit)
        real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), &
