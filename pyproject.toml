@@ -9,7 +9,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "zscan-fit"
-version = "0.1.7"
+version = "0.1.8"
 description = "Z-scan fitting library for nonlinear optics"
 authors = [{name = "Dairen Jean"}]
 license = {text = "BSD-3-Clause"}

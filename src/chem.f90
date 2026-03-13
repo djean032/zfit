@@ -55,24 +55,24 @@ module chem
    public :: rhs_rates, rhs_intensity, jdum, solve_rates, solve_intensity, &
              solve_system, fit_scan
 
-    real(c_double), pointer :: cb_data_x(:) => null()
-    real(c_double), pointer :: cb_data_y(:) => null()
-    real(c_double), pointer :: cb_spec_pars(:) => null()
-    real(c_double), pointer :: cb_z_samples(:) => null()
-    real(c_double), pointer :: cb_times(:) => null()
-    real(c_double), pointer :: cb_initial_population(:) => null()
-    real(c_double), pointer :: cb_laser_intensities(:, :, :) => null()
-    real(c_double) :: cb_frq
-    integer(c_int) :: cb_num_x_pts, cb_num_datasets
-    integer(c_int), allocatable :: cb_fit_indices(:)
-    integer(c_int) :: cb_n_fit
-    procedure(expr_f), pointer :: cb_expr => null()
-    real(c_double), allocatable :: cb_y_work(:)
+   real(c_double), pointer :: cb_data_x(:) => null()
+   real(c_double), pointer :: cb_data_y(:) => null()
+   real(c_double), pointer :: cb_spec_pars(:) => null()
+   real(c_double), pointer :: cb_z_samples(:) => null()
+   real(c_double), pointer :: cb_times(:) => null()
+   real(c_double), pointer :: cb_initial_population(:) => null()
+   real(c_double), pointer :: cb_laser_intensities(:, :, :) => null()
+   real(c_double) :: cb_frq
+   integer(c_int) :: cb_num_x_pts, cb_num_datasets
+   integer(c_int), allocatable :: cb_fit_indices(:)
+   integer(c_int) :: cb_n_fit
+   procedure(expr_f), pointer :: cb_expr => null()
+   real(c_double), allocatable :: cb_y_work(:)
 
-    !$omp threadprivate(cb_data_x, cb_data_y, cb_spec_pars, cb_z_samples, &
-    !$omp                cb_times, cb_initial_population, cb_laser_intensities, &
-    !$omp                cb_frq, cb_num_x_pts, cb_num_datasets, cb_fit_indices, &
-    !$omp                cb_n_fit, cb_expr, cb_y_work)
+   !$omp threadprivate(cb_data_x, cb_data_y, cb_spec_pars, cb_z_samples, &
+   !$omp                cb_times, cb_initial_population, cb_laser_intensities, &
+   !$omp                cb_frq, cb_num_x_pts, cb_num_datasets, cb_fit_indices, &
+   !$omp                cb_n_fit, cb_expr, cb_y_work)
 
    real(c_double) :: pre_inv_hfrq, pre_k1, pre_k2, pre_k3, pre_inv_tau4, &
                      pre_inv_tau5, pre_inv_tau6, pre_inv_tau7, pre_inv_tau8
@@ -201,77 +201,77 @@ contains
       end if
    end function solve_system
 
-     subroutine fit_scan(data_x, data_y, expr, z_samples, &
-                         times, initial_population, laser_intensities, fvec, &
-                         frq, spec_pars, num_x_pts, num_datasets, &
-                         fit_indices, n_fit)
-       integer(c_int), intent(in) :: num_datasets, num_x_pts, n_fit
-       integer(c_int), intent(in) :: fit_indices(n_fit)
-       real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), &
-                                             times(:), z_samples(:)
-       real(c_double), intent(inout), target :: spec_pars(8)
-       real(c_double), intent(inout) :: fvec(:)
-       real(c_double), intent(in) :: frq
-       procedure(expr_f) :: expr
-       integer(c_int) :: info, iwa(n_fit)
-       real(c_double) :: wa(2*size(fvec)*n_fit + 5*n_fit + size(fvec))
-       real(c_double) :: x_fit(n_fit)
+   subroutine fit_scan(data_x, data_y, expr, z_samples, &
+                       times, initial_population, laser_intensities, fvec, &
+                       frq, spec_pars, num_x_pts, num_datasets, &
+                       fit_indices, n_fit)
+      integer(c_int), intent(in) :: num_datasets, num_x_pts, n_fit
+      integer(c_int), intent(in) :: fit_indices(n_fit)
+      real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), &
+                                            times(:), z_samples(:)
+      real(c_double), intent(inout), target :: spec_pars(8)
+      real(c_double), intent(inout) :: fvec(:)
+      real(c_double), intent(in) :: frq
+      procedure(expr_f) :: expr
+      integer(c_int) :: info, iwa(n_fit)
+      real(c_double) :: wa(2*size(fvec)*n_fit + 5*n_fit + size(fvec))
+      real(c_double) :: x_fit(n_fit)
 
-       cb_data_x => data_x
-       cb_data_y => data_y
-       cb_spec_pars => spec_pars
-       cb_z_samples => z_samples
-       cb_times => times
-       cb_initial_population => initial_population
-       cb_laser_intensities => laser_intensities
-       cb_frq = frq
-       cb_num_x_pts = num_x_pts
-       cb_num_datasets = num_datasets
-       allocate(cb_fit_indices(n_fit))
-       cb_fit_indices = fit_indices
-       cb_n_fit = n_fit
-       cb_expr => expr
-       allocate (cb_y_work(size(data_x)))
+      cb_data_x => data_x
+      cb_data_y => data_y
+      cb_spec_pars => spec_pars
+      cb_z_samples => z_samples
+      cb_times => times
+      cb_initial_population => initial_population
+      cb_laser_intensities => laser_intensities
+      cb_frq = frq
+      cb_num_x_pts = num_x_pts
+      cb_num_datasets = num_datasets
+      allocate (cb_fit_indices(n_fit))
+      cb_fit_indices = fit_indices
+      cb_n_fit = n_fit
+      cb_expr => expr
+      allocate (cb_y_work(size(data_x)))
 
-       ! Initialize fitted parameters from current spec_pars
-       x_fit = spec_pars(fit_indices)
+      ! Initialize fitted parameters from current spec_pars
+      x_fit = spec_pars(fit_indices)
 
-       call lmdif1(fcn, size(fvec), n_fit, x_fit, fvec, 1e-3_c_double, info, iwa, wa, size(wa))
+      call lmdif1(fcn, size(fvec), n_fit, x_fit, fvec, 1e-3_c_double, info, iwa, wa, size(wa))
 
-       ! Copy fitted values back to spec_pars
-       spec_pars(fit_indices) = x_fit
+      ! Copy fitted values back to spec_pars
+      spec_pars(fit_indices) = x_fit
 
-       cb_data_x => null()
-       cb_data_y => null()
-       cb_spec_pars => null()
-       cb_z_samples => null()
-       cb_times => null()
-       cb_initial_population => null()
-       cb_laser_intensities => null()
-       deallocate(cb_fit_indices)
-       cb_n_fit = 0
-       cb_expr => null()
-       deallocate (cb_y_work)
-    end subroutine fit_scan
+      cb_data_x => null()
+      cb_data_y => null()
+      cb_spec_pars => null()
+      cb_z_samples => null()
+      cb_times => null()
+      cb_initial_population => null()
+      cb_laser_intensities => null()
+      deallocate (cb_fit_indices)
+      cb_n_fit = 0
+      cb_expr => null()
+      deallocate (cb_y_work)
+   end subroutine fit_scan
 
-    subroutine fcn(m, n, x, fvec, iflag)
-       integer(c_int), intent(in) :: m, n
-       integer(c_int), intent(inout) :: iflag
-       real(c_double), intent(in) :: x(n)
-       real(c_double), intent(out) :: fvec(m)
-       integer(c_int) :: bidx, eidx, i
-       real(c_double) :: local_spec_pars(8)
+   subroutine fcn(m, n, x, fvec, iflag)
+      integer(c_int), intent(in) :: m, n
+      integer(c_int), intent(inout) :: iflag
+      real(c_double), intent(in) :: x(n)
+      real(c_double), intent(out) :: fvec(m)
+      integer(c_int) :: bidx, eidx, i
+      real(c_double) :: local_spec_pars(8)
 
-       local_spec_pars = cb_spec_pars
-       ! Update all fitted parameters
-       local_spec_pars(cb_fit_indices) = x
-       do i = 1, cb_num_datasets
-          bidx = (i - 1)*cb_num_x_pts + 1
-          eidx = i*cb_num_x_pts
-          cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, &
-                                         cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
-          fvec(bidx:eidx) = (cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx))
-       end do
-    end subroutine
+      local_spec_pars = cb_spec_pars
+      ! Update all fitted parameters
+      local_spec_pars(cb_fit_indices) = x
+      do i = 1, cb_num_datasets
+         bidx = (i - 1)*cb_num_x_pts + 1
+         eidx = i*cb_num_x_pts
+         cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, &
+                                        cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
+         fvec(bidx:eidx) = (cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx))
+      end do
+   end subroutine
 
 end module chem
