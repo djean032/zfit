@@ -191,7 +191,11 @@ contains
       wing_pts = 5
       wing_avg = (sum(normalized_intensities(1:wing_pts)) + &
                   sum(normalized_intensities(size(normalized_intensities) - wing_pts + 1:)))/(2.0_c_double*wing_pts)
-      y = y/intensity_0 + (1.0_c_double - wing_avg)
+      if (wing_avg < 1) then
+         y = y/intensity_0 + (1.0_c_double - wing_avg)
+      else
+         y = y/intensity_0 - (wing_avg - 1.0_c_double)
+      end if
    end function solve_system
 
    subroutine fit_scan(data_x, data_y, expr, z_samples, &
