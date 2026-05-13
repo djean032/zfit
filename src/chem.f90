@@ -204,16 +204,17 @@ contains
    subroutine fit_scan(data_x, data_y, expr, z_samples, &
                        times, initial_population, laser_intensities, fvec, &
                        frq, spec_pars, num_x_pts, num_datasets, &
-                       fit_indices, n_fit)
+                       fit_indices, n_fit, weighted_error)
       integer(c_int), intent(in) :: num_datasets, num_x_pts, n_fit
       integer(c_int), intent(in) :: fit_indices(n_fit)
       real(c_double), intent(in), target :: data_x(:), data_y(:), initial_population(:), laser_intensities(:, :, :), &
                                             times(:), z_samples(:)
       real(c_double), intent(inout), target :: spec_pars(8)
       real(c_double), intent(inout) :: fvec(:)
+      real(c_double), intent(out) :: weighted_error
       real(c_double), intent(in) :: frq
       procedure(expr_f) :: expr
-      integer(c_int) :: info, iwa(n_fit)
+      integer(c_int) :: bidx, eidx, i, info, iwa(n_fit)
       real(c_double) :: wa(2*size(fvec)*n_fit + 5*n_fit + size(fvec))
       real(c_double) :: x_fit(n_fit)
 
@@ -238,8 +239,19 @@ contains
 
       call lmdif1(fcn, size(fvec), n_fit, x_fit, fvec, 1e-3_c_double, info, iwa, wa, size(wa))
 
+      weighted_error = enorm(size(fvec), fvec)
+
       ! Copy fitted values back to spec_pars
       spec_pars(fit_indices) = x_fit
+
+      ! Recompute residuals without weights for output/plotting
+      do i = 1, cb_num_datasets
+         bidx = (i - 1)*cb_num_x_pts + 1
+         eidx = i*cb_num_x_pts
+         cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, &
+                                        cb_laser_intensities(:, :, i), cb_frq, spec_pars)
+         fvec(bidx:eidx) = cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx)
+      end do
 
       cb_data_x => null()
       cb_data_y => null()

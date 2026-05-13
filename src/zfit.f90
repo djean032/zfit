@@ -17,7 +17,7 @@ contains
        real(c_double), intent(inout) :: spec_pars(8)
        real(c_double), intent(out) :: error, residuals(*)
        integer(c_int) :: bidx, eidx, idx, loc(1), tdx, zdx
-       real(c_double) :: frq, wid, zr
+       real(c_double) :: frq, weighted_error, wid, zr
        real(c_double), allocatable :: data_x(:), data_pop(:), data_y(:), fvec(:), &
                                       intensities(:, :, :), t(:), z(:)
 
@@ -48,9 +48,9 @@ contains
           end do
        end do
 
-       call fit_scan(data_x, data_y, solve_system, z, &
-                     t, data_pop, intensities, fvec, frq, spec_pars, num_x_pts, num_datasets, fit_indices, n_fit)
-       error = enorm(num_x_pts*num_datasets, fvec)
+        call fit_scan(data_x, data_y, solve_system, z, &
+                     t, data_pop, intensities, fvec, frq, spec_pars, num_x_pts, num_datasets, fit_indices, n_fit, weighted_error)
+       error = weighted_error
        residuals(1:n_residuals) = fvec(1:n_residuals)
 
    end subroutine
