@@ -9,7 +9,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "zscan-fit-intel"
-version = "0.1.9"
+version = "0.1.10"
 description = "Z-scan fitting library for nonlinear optics (Intel oneAPI)"
 authors = [{name = "Dairen Jean"}]
 license = {text = "BSD-3-Clause"}
