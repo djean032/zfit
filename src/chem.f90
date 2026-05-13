@@ -259,18 +259,26 @@ contains
       integer(c_int), intent(inout) :: iflag
       real(c_double), intent(in) :: x(n)
       real(c_double), intent(out) :: fvec(m)
-      integer(c_int) :: bidx, eidx, i
-      real(c_double) :: local_spec_pars(8)
+      integer(c_int) :: bidx, eidx, i, j, npts
+      real(c_double) :: local_spec_pars(8), z0, sigma, boost
+      real(c_double) :: w(cb_num_x_pts)
 
       local_spec_pars = cb_spec_pars
       ! Update all fitted parameters
       local_spec_pars(cb_fit_indices) = x
+      z0 = 0.0_c_double
+      sigma = 0.5_c_double
+      boost = 4.0_c_double
       do i = 1, cb_num_datasets
          bidx = (i - 1)*cb_num_x_pts + 1
          eidx = i*cb_num_x_pts
+         npts = eidx - bidx + 1
          cb_y_work(bidx:eidx) = cb_expr(cb_data_x(bidx:eidx), cb_z_samples, cb_times, cb_initial_population, &
                                         cb_laser_intensities(:, :, i), cb_frq, local_spec_pars)
-         fvec(bidx:eidx) = (cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx))
+         do j = 1, npts
+            w(j) = 1.0_c_double + boost*exp(-((cb_data_x(bidx + j - 1) - z0)/sigma)**2)
+         end do
+         fvec(bidx:eidx) = sqrt(w(1:npts))*(cb_data_y(bidx:eidx) - cb_y_work(bidx:eidx))
       end do
    end subroutine
 
