@@ -1,5 +1,5 @@
 project('zfit', 'c', 'fortran', 'cython',
-  version: '0.1.8',
+  version: '0.1.9',
   meson_version: '>=1.1.0',
   default_options: [
     'buildtype=release',
