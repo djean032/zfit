@@ -24,7 +24,7 @@ pip install .
 
 ### Prebuilt Wheels
 
-PyPI wheels are built for Linux, Windows, and macOS (Intel `x86_64` and Apple Silicon `arm64`) for Python 3.9 through 3.14.
+PyPI wheels are built for Linux, Windows, and macOS (Apple Silicon `arm64`, macOS 14+) for Python 3.9 through 3.14.
 
 ## Quick Start
 

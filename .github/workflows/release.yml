@@ -97,36 +97,6 @@ jobs:
           name: wheels-gfortran-windows
           path: wheelhouse/*.whl
 
-  build-gfortran-macos-x86_64:
-    name: Build (macOS, x86_64, GCC)
-    runs-on: macos-13
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install gfortran
-        run: brew install gcc
-
-      - name: Detect gfortran path
-        run: |
-          GFORTRAN_BIN="$(ls "$(brew --prefix)/bin"/gfortran-* | head -n 1)"
-          echo "FC=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
-          echo "F77=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
-        env:
-          CIBW_ARCHS: x86_64
-          CIBW_SKIP: "*-musllinux_* pp*"
-          CIBW_BUILD_FRONTEND: build
-          CIBW_TEST_COMMAND: pytest {package}/test -v
-          CIBW_TEST_REQUIRES: pytest scipy
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-gfortran-macos-x86_64
-          path: wheelhouse/*.whl
-
   build-gfortran-macos-arm64:
     name: Build (macOS, arm64, GCC)
     runs-on: macos-14
@@ -147,7 +117,8 @@ jobs:
         uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: arm64
-          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_SKIP: "*-musllinux_*"
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: pytest {package}/test -v
           CIBW_TEST_REQUIRES: pytest scipy
@@ -247,7 +218,7 @@ jobs:
   # =====================
   publish:
     name: Publish to PyPI
-    needs: [build-gfortran-linux-x86_64, build-gfortran-linux-aarch64, build-gfortran-windows, build-gfortran-macos-x86_64, build-gfortran-macos-arm64, build-intel-linux, build-intel-windows]
+    needs: [build-gfortran-linux-x86_64, build-gfortran-linux-aarch64, build-gfortran-windows, build-gfortran-macos-arm64, build-intel-linux, build-intel-windows]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
