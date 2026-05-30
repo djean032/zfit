@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
        
       - name: Setup Fortran
         uses: fortran-lang/setup-fortran@v1
@@ -25,7 +25,7 @@ jobs:
         run: cp pyproject-intel.toml pyproject.toml
 
       - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
           CIBW_ARCHS: x86_64
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -46,7 +46,7 @@ jobs:
     runs-on: windows-2022
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
        
       - name: Setup Fortran
         uses: fortran-lang/setup-fortran@v1
@@ -74,7 +74,7 @@ jobs:
         shell: powershell
 
       - name: Build wheels with cibuildwheel
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
           CIBW_ARCHS: AMD64
           CIBW_SKIP: "*-musllinux_* pp*"

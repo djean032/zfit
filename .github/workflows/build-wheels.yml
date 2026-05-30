@@ -19,10 +19,10 @@ jobs:
           - { arch: aarch64, runner: ubuntu-24.04-arm }
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
        
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -41,7 +41,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Setup Rtools (MinGW-w64 with gfortran)
         run: |
@@ -66,7 +66,7 @@ jobs:
         shell: powershell
       
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
           CIBW_ARCHS: AMD64
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -86,15 +86,20 @@ jobs:
     runs-on: macos-13
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install gfortran
         run: brew install gcc
 
+      - name: Detect gfortran path
+        run: |
+          GFORTRAN_BIN="$(ls "$(brew --prefix)/bin"/gfortran-* | head -n 1)"
+          echo "FC=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
+          echo "F77=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
+
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
-          FC: gfortran
           CIBW_ARCHS: x86_64
           CIBW_SKIP: "*-musllinux_* pp*"
           CIBW_BUILD_FRONTEND: build
@@ -111,15 +116,20 @@ jobs:
     runs-on: macos-14
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install gfortran
         run: brew install gcc
 
+      - name: Detect gfortran path
+        run: |
+          GFORTRAN_BIN="$(ls "$(brew --prefix)/bin"/gfortran-* | head -n 1)"
+          echo "FC=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
+          echo "F77=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
+
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v3
         env:
-          FC: gfortran
           CIBW_ARCHS: arm64
           CIBW_SKIP: "*-musllinux_* pp*"
           CIBW_BUILD_FRONTEND: build
