@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v5
        
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -66,7 +66,7 @@ jobs:
         shell: powershell
       
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: AMD64
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -98,7 +98,7 @@ jobs:
           echo "F77=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: x86_64
           CIBW_SKIP: "*-musllinux_* pp*"
@@ -128,7 +128,7 @@ jobs:
           echo "F77=${GFORTRAN_BIN}" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: arm64
           CIBW_SKIP: "*-musllinux_* pp*"
