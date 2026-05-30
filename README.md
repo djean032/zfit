@@ -22,6 +22,10 @@ pip install .
 - NumPy >= 1.20
 - gfortran or Intel Fortran compiler
 
+### Prebuilt Wheels
+
+PyPI wheels are built for Linux, Windows, and macOS (Intel `x86_64` and Apple Silicon `arm64`) for Python 3.9 through 3.14.
+
 ## Quick Start
 
 ```python
